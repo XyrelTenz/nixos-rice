@@ -1,0 +1,9 @@
+# Nix build artifacts
+result
+result-*
+
+# Neovim lazy-lock (optional: commit this if you want reproducible plugin versions)
+# .config/nvim/lazy-lock.json
+
+# System-generated
+.direnv/

@@ -43,22 +43,22 @@ return {
 			view = { adaptive_size = true, side = "left" },
 		},
 	},
-	--- Copilot
-	-- {
-	-- 	"zbirenbaum/copilot.lua",
-	-- 	cmd = "Copilot",
-	-- 	event = "InsertEnter",
-	-- 	opts = {
-	-- 		suggestion = {
-	-- 			enabled = true,
-	-- 			auto_trigger = true,
-	-- 			keymap = {
-	-- 				accept = "<C-l>",
-	-- 			},
-	-- 		},
-	-- 		panel = { enabled = false },
-	-- 	},
-	-- },
+	-- Copilot
+	{
+		"zbirenbaum/copilot.lua",
+		cmd = "Copilot",
+		event = "InsertEnter",
+		opts = {
+			suggestion = {
+				enabled = true,
+				auto_trigger = true,
+				keymap = {
+					accept = "<C-l>",
+				},
+			},
+			panel = { enabled = false },
+		},
+	},
 
 	--- Golang
 	{
@@ -91,32 +91,32 @@ return {
 	},
 
 	--- Code Action Ligh Bulb
-	-- { "kosayoda/nvim-lightbulb", lazy = false, priority = 1000, opts = { autocmd = { enabled = true } } },
+	{ "kosayoda/nvim-lightbulb", lazy = false, priority = 1000, opts = { autocmd = { enabled = true } } },
 
 	{ import = "nvchad.blink.lazyspec" },
 	-- Auto Give Commit Messages
-	-- {
-	-- 	"ajatdarojat45/commitmate.nvim",
-	-- 	lazy = false,
-	-- 	dependencies = {
-	-- 		"nvim-lua/plenary.nvim",
-	-- 		"CopilotC-Nvim/CopilotChat.nvim",
-	-- 	},
-	-- 	config = function()
-	-- 		require("commitmate").setup({
-	-- 			open_lazygit = true,
-	-- 			ping_message = "CommitMate.nvim is ready",
-	-- 		})
-	-- 	end,
-	-- },
+	{
+		"ajatdarojat45/commitmate.nvim",
+		lazy = false,
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"CopilotC-Nvim/CopilotChat.nvim",
+		},
+		config = function()
+			require("commitmate").setup({
+				open_lazygit = true,
+				ping_message = "CommitMate.nvim is ready",
+			})
+		end,
+	},
 
 	-- Typer
-	-- {
-	-- 	"nvzone/typr",
-	-- 	dependencies = "nvzone/volt",
-	-- 	opts = {},
-	-- 	cmd = { "Typr", "TyprStats" },
-	-- },
+	{
+		"nvzone/typr",
+		dependencies = "nvzone/volt",
+		opts = {},
+		cmd = { "Typr", "TyprStats" },
+	},
 
 	--- Project for Rooter
 	{

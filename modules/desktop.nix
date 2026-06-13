@@ -20,6 +20,21 @@
     wayland.enable = true;
   };
 
+  # qylock SDDM theme
+  programs.qylock = {
+    enable = true;
+    theme = "clockwork";
+    sddm.enable = true;        # installs theme + sets it as active SDDM theme
+    quickshell.enable = true;  # adds `qylock-lock` to PATH
+
+    themeOptions = {
+      clockwork.orbital = {
+        themeMode = "dark";
+        enableWindup = true;
+      };
+    };
+  };
+
   # Hardware
   hardware.graphics.enable = true;
   hardware.bluetooth.enable = true;

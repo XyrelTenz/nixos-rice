@@ -1,4 +1,6 @@
 if status is-interactive
+    # ── Suppress greeting ─────────────────────────────────────────────
+    set -g fish_greeting
     # ── Starship prompt ───────────────────────────────────────────────
     starship init fish | source
 

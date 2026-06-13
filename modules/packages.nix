@@ -5,7 +5,6 @@
   ...
 }: {
   environment.systemPackages = with pkgs; [
-    # ── Core System Tools ────────────────────────────────────────────────
     wget
     git
     kitty
@@ -20,13 +19,11 @@
     wf-recorder
     slurp
 
-    # ── Desktop & Apps ───────────────────────────────────────────────────
     kdePackages.dolphin
     kdePackages.qtsvg
     waybar
     firefox
 
-    # ── Development & Android ────────────────────────────────────────────
     neovim
     android-tools
     tree-sitter
@@ -39,16 +36,15 @@
     cargo
     rustc
 
-    # ── LSPs & Formatters ────────────────────────────────────────────────
     clang-tools
     typescript
     typescript-language-server
     vue-language-server
     lua-language-server
     gopls
-    gotools # provides goimports (go-tools only has staticcheck etc)
+    gotools 
     golines
-    go-tools # staticcheck, structlayout etc
+    go-tools 
     sqls
     lazygit
     gcc
@@ -63,30 +59,29 @@
     nixd
     alejandra
     kdePackages.qtdeclarative
-    prettier # JS/TS/CSS/HTML formatter
-    ktfmt # Kotlin formatter
-    google-java-format # Java formatter
-    rustfmt # Rust formatter
+    prettier 
+    ktfmt 
+    google-java-format 
+    rustfmt 
 
-    # ── Editors ──────────────────────────────────────────────────────────
-    zed-editor-fhs # FHS-wrapped: extensions work on NixOS out of the box
+    zed-editor-fhs 
 
-    # ── Apertura / Aesthetics ────────────────────────────────────────────
     grim
     slurp
     satty
     cava
     matugen
     swww
-
-    # ── Quickshell (wrapped with runtime deps) ───────────────────────────
+    imagemagick   # required by WallpaperPicker for thumbnail generation & webp conversion
+    ffmpeg        # required by WallpaperPicker for video wallpaper thumbnails
+    mpvpaper      # video wallpaper playback
     (symlinkJoin {
       name = "quickshell-wrapped";
       paths = [quickshell];
       nativeBuildInputs = [makeWrapper];
       postBuild = ''
         wrapProgram $out/bin/qs \
-          --prefix PATH : "${lib.makeBinPath [(python3.withPackages (ps: [ps.pyxdg])) bluez networkmanager wireplumber matugen awww cava]}" \
+          --prefix PATH : "${lib.makeBinPath [(python3.withPackages (ps: [ps.pyxdg])) bluez networkmanager wireplumber matugen swww cava imagemagick ffmpeg]}" \
           --prefix QML2_IMPORT_PATH : "${kdePackages.qt5compat}/lib/qt-6/qml"
       '';
     })

@@ -28,7 +28,7 @@ hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("qs -c Apertura ipc call wallpaper toggle"))
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("qylock-lock clockwork"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("vscodium"))
 
 -- Window Focus Navigation

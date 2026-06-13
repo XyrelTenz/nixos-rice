@@ -226,6 +226,7 @@ Item {
 
             if (alreadyExists) {
                 const applyScript = `
+                    export PATH="/run/current-system/sw/bin:$PATH"
                     export DEST_FILE="${escapeBash(destFile)}"
                     export FINAL_THUMB="${escapeBash(finalThumb)}"
                     export RELOAD_SCRIPT="${escapeBash(reloadScript)}"
@@ -236,6 +237,9 @@ Item {
 
                     echo "" >> ${logFile}
                     echo "[$(date +'%H:%M:%S.%3N')] APPLYING CACHED SEARCH: $DEST_FILE TO $TARGET_MONITORS" >> ${logFile}
+
+                    swww-daemon --no-cache >> ${logFile} 2>&1 &
+                    sleep 0.3
 
                     if [ "$TARGET_MONITORS" = "all" ]; then
                         swww img "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
@@ -252,6 +256,7 @@ Item {
                 window.currentDownloadName = safeFileName;
 
                 const downloadScript = `
+                    export PATH="/run/current-system/sw/bin:$PATH"
                     export SAFE_NAME="${escapeBash(safeFileName)}"
                     export DEST_FILE="${escapeBash(destFile)}"
                     export FINAL_THUMB="${escapeBash(finalThumb)}"
@@ -279,6 +284,9 @@ Item {
 
                         echo "" >> ${logFile}
                         echo "[$(date +'%H:%M:%S.%3N')] APPLYING NEW DOWNLOAD: $DEST_FILE TO $TARGET_MONITORS" >> ${logFile}
+
+                        swww-daemon --no-cache >> ${logFile} 2>&1 &
+                        sleep 0.3
 
                         if [ "$TARGET_MONITORS" = "all" ]; then
                             swww img "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
@@ -323,6 +331,9 @@ Item {
                 echo "" >> ${logFile}
                 echo "[$(date +'%H:%M:%S.%3N')] APPLYING LOCAL IMAGE: ${escOriginal} TO ${escOutputs}" >> ${logFile}
 
+                swww-daemon --no-cache >> ${logFile} 2>&1 &
+                sleep 0.3
+
                 if [ "${escOutputs}" = "all" ]; then
                     swww img "${escOriginal}" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
                 else
@@ -332,6 +343,7 @@ Item {
         }
 
         const fullScript = `
+            export PATH="/run/current-system/sw/bin:$PATH"
             cp "${isVideo ? escThumb : escOriginal}" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
             pkill mpvpaper || true
 

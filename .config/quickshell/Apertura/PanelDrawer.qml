@@ -5,14 +5,14 @@ import Quickshell.Wayland
 
 Item {
     id: drawerRoot
-    
+
     property bool isOpen: false
     property int drawerHeight: 375
-    property int drawerWidth: 300 
+    property int drawerWidth: 300
     property string modalToken: ""
     property bool anchorTop: true
     property bool anchorRight: false
-    
+
     property alias contentItem: drawerContent
 
     default property alias contentData: drawerContent.data
@@ -37,7 +37,12 @@ Item {
         WlrLayershell.namespace: "quickshell-overlay"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
-        anchors { left: true; top: true; bottom: true; right: true }
+        anchors {
+            left: true
+            top: true
+            bottom: true
+            right: true
+        }
         color: "transparent"
 
         // Clicking outside the drawer content dismisses it
@@ -64,7 +69,7 @@ Item {
             // Prevent clicks inside the drawer from closing it
             MouseArea {
                 anchors.fill: parent
-                onPressed: (mouse) => mouse.accepted = true
+                onPressed: mouse => mouse.accepted = true
             }
 
             opacity: 0.0
@@ -73,7 +78,7 @@ Item {
                 State {
                     name: "open"
                     when: drawerRoot.isOpen
-                    PropertyChanges { 
+                    PropertyChanges {
                         target: drawerContent
                         opacity: 1.0
                         x: drawerRoot.anchorRight ? (drawerOverlayWindow.width - drawerRoot.drawerWidth - 12) : 0
@@ -82,7 +87,7 @@ Item {
                 State {
                     name: "closed"
                     when: !drawerRoot.isOpen
-                    PropertyChanges { 
+                    PropertyChanges {
                         target: drawerContent
                         opacity: 0.0
                         x: drawerRoot.anchorRight ? drawerOverlayWindow.width : -drawerRoot.drawerWidth
@@ -92,21 +97,43 @@ Item {
 
             transitions: [
                 Transition {
-                    from: "closed"; to: "open"
+                    from: "closed"
+                    to: "open"
                     ParallelAnimation {
-                        NumberAnimation { property: "x"; duration: 200; easing.type: Easing.OutCubic }
-                        NumberAnimation { property: "opacity"; duration: 150; easing.type: Easing.OutQuad }
+                        NumberAnimation {
+                            property: "x"
+                            duration: 200
+                            easing.type: Easing.OutCubic
+                        }
+                        NumberAnimation {
+                            property: "opacity"
+                            duration: 150
+                            easing.type: Easing.OutQuad
+                        }
                     }
                 },
                 Transition {
-                    from: "open"; to: "closed"
+                    from: "open"
+                    to: "closed"
                     SequentialAnimation {
-                        ScriptAction { script: drawerRoot._animatingClosed = true; }
-                        ParallelAnimation {
-                            NumberAnimation { property: "x"; duration: 200; easing.type: Easing.InCubic }
-                            NumberAnimation { property: "opacity"; duration: 200; easing.type: Easing.InQuad }
+                        ScriptAction {
+                            script: drawerRoot._animatingClosed = true
                         }
-                        ScriptAction { script: drawerRoot._animatingClosed = false; }
+                        ParallelAnimation {
+                            NumberAnimation {
+                                property: "x"
+                                duration: 200
+                                easing.type: Easing.InCubic
+                            }
+                            NumberAnimation {
+                                property: "opacity"
+                                duration: 200
+                                easing.type: Easing.InQuad
+                            }
+                        }
+                        ScriptAction {
+                            script: drawerRoot._animatingClosed = false
+                        }
                     }
                 }
             ]

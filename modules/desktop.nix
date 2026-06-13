@@ -20,12 +20,6 @@
     wayland.enable = true;
   };
 
-  # SDDM
-  programs.silentSDDM = {
-    enable = true;
-    theme = "silvia";
-  };
-
   # Hardware
   hardware.graphics.enable = true;
   hardware.bluetooth.enable = true;

@@ -77,7 +77,7 @@
     satty
     cava
     matugen
-    awww
+    swww
 
     # ── Quickshell (wrapped with runtime deps) ───────────────────────────
     (symlinkJoin {

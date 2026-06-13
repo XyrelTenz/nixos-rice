@@ -14,7 +14,7 @@ Item {
     property string wallpaperDir: ""
     property bool menuOpen: false
     property point globalMousePos: Qt.point(-1, -1)
-    property int barHeight: 1080 // fallback to avoid property not found if referenced
+    property int barHeight: 1080
 
     function toggleMenu(): void {
         menuOpen = !menuOpen;
@@ -58,7 +58,7 @@ Item {
             radius: 0
             color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
             opacity: wallpaperMouseArea.containsMouse ? 0.3 : 0.0
-            z: 1 // Sits above base, below text
+            z: 1
         }
 
         MouseArea {
@@ -75,7 +75,7 @@ Item {
 
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "quickshell-wallpaper-picker"
-        WlrLayershell.keyboardFocus: WlrLayershell.OnDemand
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
         anchors {
             left: true
@@ -100,7 +100,8 @@ Item {
             width: parent.width
             height: 650
 
-            source: wallpaperModuleRoot.menuOpen ? Qt.resolvedUrl("WallpaperPicker.qml").toString() : ""
+            // source: wallpaperModuleRoot.menuOpen ? Qt.resolvedUrl("WallpaperPicker.qml").toString() : ""
+            source: wallpaperModuleRoot.menuOpen ? "WallpaperPicker.qml" : ""
 
             onLoaded: {
                 if (item) {

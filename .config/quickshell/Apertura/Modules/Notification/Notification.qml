@@ -206,17 +206,17 @@ Item {
                 delegate: Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(80, appHeaderRow.height + tSummary.implicitHeight + tBody.implicitHeight + 36)
-                    color: "#9911111b" 
+                    color: "#ee11111b" 
                     border.color: rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff"
                     border.width: 1
-                    radius: 10
+                    radius: 0
 
                     property bool isHovered: toastMouseArea.containsMouse
 
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 12
-                        spacing: 6
+                        spacing: 0
 
                         RowLayout {
                             id: appHeaderRow

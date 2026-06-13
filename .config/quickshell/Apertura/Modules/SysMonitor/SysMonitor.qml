@@ -19,7 +19,7 @@ Item {
     property real ramUsed: 0.0
     property real ramTotal: 0.0
     property int ramPercent: 0
-    
+
     property string diskUsed: "0"
     property string diskTotal: "0"
     property int diskPercent: 0
@@ -29,6 +29,14 @@ Item {
     property int gpuTemp: 0
 
     property var theme: rootScope.theme
+
+    function accentForPercent(pct) {
+        if (pct >= 90)
+            return "#f38ba8";
+        if (pct >= 70)
+            return "#f9e2af";
+        return theme ? theme.theme_primary : "#89b4fa";
+    }
 
     Timer {
         id: osdAutohideTimer
@@ -78,9 +86,11 @@ Item {
 
             onTextChanged: {
                 let cleaned = text.trim();
-                if (!cleaned) return;
-                let parts = cleaned.split(/\s+/); 
-                if (parts.length < 10) return; 
+                if (!cleaned)
+                    return;
+                let parts = cleaned.split(/\s+/);
+                if (parts.length < 10)
+                    return;
 
                 let curTotal = parseInt(parts[0]);
                 let curIdle = parseInt(parts[1]);
@@ -102,7 +112,7 @@ Item {
                 monitorRoot.ramTotal = totalMem / 1024 / 1024;
                 monitorRoot.ramUsed = (totalMem - availMem) / 1024 / 1024;
                 monitorRoot.ramPercent = Math.round(((totalMem - availMem) / totalMem) * 100);
-                
+
                 monitorRoot.diskUsed = parts[5];
                 monitorRoot.diskTotal = parts[6];
                 monitorRoot.diskPercent = parseInt(parts[7].replace("%", ""));
@@ -128,28 +138,27 @@ Item {
         stdout: StdioCollector {
             onTextChanged: {
                 let cleaned = text.trim();
-                if (!cleaned) return;
-
+                if (!cleaned)
+                    return;
                 let lines = cleaned.split("\n");
                 processListModel.clear();
-
-                let maxLines = Math.min(lines.length, 7); 
-
+                let maxLines = Math.min(lines.length, 7);
                 for (let i = 0; i < maxLines; i++) {
                     let line = lines[i].trim();
-                    if (!line) continue;
-
+                    if (!line)
+                        continue;
                     let lastSpace = line.lastIndexOf(" ");
-                    if (lastSpace === -1) continue;
-
+                    if (lastSpace === -1)
+                        continue;
                     let pName = line.substring(0, lastSpace).trim();
                     let pCpuRaw = parseFloat(line.substring(lastSpace + 1).trim());
-
-                    if (pName === "ps" || pName === "sh" || pName === "awk" || pName === "quickshell") continue;
-
+                    if (pName === "ps" || pName === "sh" || pName === "awk" || pName === "quickshell")
+                        continue;
                     if (pName && !isNaN(pCpuRaw)) {
-                        let pCpuNormalized = pCpuRaw.toFixed(1);
-                        processListModel.append({ "name": pName, "cpu": pCpuNormalized });
+                        processListModel.append({
+                            "name": pName,
+                            "cpu": pCpuRaw.toFixed(1)
+                        });
                     }
                 }
             }
@@ -174,23 +183,19 @@ Item {
         id: sysMonitorHitbox
         anchors.fill: parent
         color: "transparent"
-        radius: 0
 
         Text {
             anchors.centerIn: parent
             text: "cardiology"
             font.family: "Material Symbols Outlined"
-            font.pixelSize: 20
-            color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
-        }
+            font.pixelSize: 18
+            color: iconMouseArea.containsMouse ? (monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa") : (monitorRoot.theme ? monitorRoot.theme.theme_fg : "#cdd6f4")
 
-        Rectangle {
-            id: sysHoverOverlay
-            anchors.fill: parent
-            radius: 0
-            color: monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa"
-            opacity: iconMouseArea.containsMouse ? 0.3 : 0.0
-            z: 1
+            Behavior on color {
+                ColorAnimation {
+                    duration: 200
+                }
+            }
         }
 
         MouseArea {
@@ -205,7 +210,7 @@ Item {
     PanelDrawer {
         id: drawerTemplate
         isOpen: false
-        drawerHeight: monitorRoot.hasGpu ? 375 : 330 
+        drawerHeight: monitorRoot.hasGpu ? 390 : 342
         modalToken: "sysmonitor"
         anchorTop: false
 
@@ -229,191 +234,197 @@ Item {
         MouseArea {
             id: preventDismiss
             anchors.fill: parent
-            onPressed: (mouse) => { mouse.accepted = true; checkUserActivity(); }
+            onPressed: mouse => {
+                mouse.accepted = true;
+                checkUserActivity();
+            }
         }
 
         ColumnLayout {
             id: mainContainerLayout
             anchors.fill: parent
-            anchors.margins: 12
+            anchors.margins: 16
             spacing: 0
             focus: true
 
-            Item {
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 32
+                Layout.preferredHeight: 30
+                spacing: 8
+
+                Rectangle {
+                    width: 3
+                    height: 16
+                    radius: 2
+                    color: monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa"
+                }
 
                 Text {
-                    id: titleLabel
-                    text: "Usage"
+                    text: "System"
                     font.family: "Rubik"
-                    font.pixelSize: 16
-                    font.weight: Font.Bold 
-                    color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: 2
+                    font.pixelSize: 14
+                    font.weight: Font.SemiBold
+                    color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#cdd6f4"
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Rectangle {
+                    width: 6
+                    height: 6
+                    radius: 3
+                    color: "#a6e3a1"
+
+                    SequentialAnimation on opacity {
+                        running: drawerTemplate.isOpen
+                        loops: Animation.Infinite
+                        NumberAnimation {
+                            to: 0.3
+                            duration: 900
+                            easing.type: Easing.InOutSine
+                        }
+                        NumberAnimation {
+                            to: 1.0
+                            duration: 900
+                            easing.type: Easing.InOutSine
+                        }
+                    }
+                }
+
+                Text {
+                    text: "Live"
+                    font.family: "Rubik"
+                    font.pixelSize: 9
+                    font.weight: Font.Medium
+                    color: "#66ffffff"
                 }
             }
 
             Rectangle {
-                id: headerDivider
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
-                color: monitorRoot.theme ? monitorRoot.theme.theme_outline : "#26ffffff"
-                Layout.bottomMargin: 8
+                color: "#18ffffff"
+                Layout.bottomMargin: 12
             }
 
             ColumnLayout {
-                id: metricsBlock
                 Layout.fillWidth: true
-                spacing: 8 
+                spacing: 10
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 3
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Text { text: "CPU"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Medium; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                        Item { Layout.fillWidth: true }
-                        Text { text: monitorRoot.cpuTemp + "°C  |  " + monitorRoot.cpuPercent + "%"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Bold; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 6
-
-                        Rectangle {
-                            anchors.fill: parent
-                            color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
-                            opacity: 0.12
-                            radius: 3
+                Repeater {
+                    model: [
+                        {
+                            label: "CPU",
+                            icon: "memory",
+                            pct: monitorRoot.cpuPercent,
+                            detail: monitorRoot.cpuTemp + "°  ·  " + monitorRoot.cpuPercent + "%",
+                            visible: true,
+                            barWidth: monitorRoot.cpuPercent / 100.0
+                        },
+                        {
+                            label: "GPU",
+                            icon: "display_settings",
+                            pct: monitorRoot.gpuPercent,
+                            detail: monitorRoot.gpuTemp + "°  ·  " + monitorRoot.gpuPercent + "%",
+                            visible: monitorRoot.hasGpu,
+                            barWidth: monitorRoot.gpuPercent / 100.0
+                        },
+                        {
+                            label: "RAM",
+                            icon: "storage",
+                            pct: monitorRoot.ramPercent,
+                            detail: monitorRoot.ramUsed.toFixed(1) + " / " + monitorRoot.ramTotal.toFixed(1) + " GB",
+                            visible: true,
+                            barWidth: monitorRoot.ramPercent / 100.0
+                        },
+                        {
+                            label: "Disk",
+                            icon: "hard_drive",
+                            pct: monitorRoot.diskPercent,
+                            detail: monitorRoot.diskUsed + " / " + monitorRoot.diskTotal + " GB",
+                            visible: true,
+                            barWidth: monitorRoot.diskPercent / 100.0
                         }
+                    ]
 
-                        Rectangle {
-                            id: cpuProgressBar
-                            height: parent.height
-                            width: parent.width * (monitorRoot.cpuPercent / 100.0)
-                            color: monitorRoot.cpuPercent >= 90 ? "#f38ba8" : (monitorRoot.cpuPercent >= 70 ? "#f9e2af" : (monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa"))
-                            radius: 3
+                    delegate: ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 5
+                        visible: modelData.visible
+                        Layout.preferredHeight: modelData.visible ? -1 : 0
 
-                            Behavior on width { 
-                                NumberAnimation { duration: 250; easing.type: Easing.OutCubic } 
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Text {
+                                text: modelData.icon
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 13
+                                color: monitorRoot.accentForPercent(modelData.pct)
+                            }
+
+                            Text {
+                                text: modelData.label
+                                font.family: "Rubik"
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
+                                color: "#99ffffff"
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                text: modelData.detail
+                                font.family: "Rubik"
+                                font.pixelSize: 11
+                                font.weight: Font.SemiBold
+                                color: monitorRoot.accentForPercent(modelData.pct)
                             }
                         }
-                    }
-                }
 
-                ColumnLayout {
-                    id: gpuLayoutGroup
-                    Layout.fillWidth: true
-                    spacing: monitorRoot.hasGpu ? 3 : 0
-                    
-                    visible: monitorRoot.hasGpu
-                    Layout.preferredWidth: monitorRoot.hasGpu ? -1 : 0
-                    Layout.preferredHeight: monitorRoot.hasGpu ? -1 : 0
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 5
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        visible: monitorRoot.hasGpu
-                        Text { text: "GPU"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Medium; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                        Item { Layout.fillWidth: true }
-                        Text { text: monitorRoot.gpuTemp + "°C  |  " + monitorRoot.gpuPercent + "%"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Bold; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: monitorRoot.hasGpu ? 6 : 0
-                        visible: monitorRoot.hasGpu
-
-                        Rectangle {
-                            anchors.fill: parent
-                            color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
-                            opacity: 0.12
-                            radius: 3
-                        }
-
-                        Rectangle {
-                            id: gpuProgressBar
-                            height: parent.height
-                            width: parent.width * (monitorRoot.gpuPercent / 100.0)
-                            color: monitorRoot.gpuPercent >= 90 ? "#f38ba8" : (monitorRoot.gpuPercent >= 70 ? "#f9e2af" : (monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa"))
-                            radius: 3
-
-                            Behavior on width { 
-                                NumberAnimation { duration: 250; easing.type: Easing.OutCubic } 
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "#14ffffff"
+                                radius: 3
                             }
-                        }
-                    }
-                }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 3
+                            Rectangle {
+                                height: parent.height
+                                width: parent.width * modelData.barWidth
+                                color: monitorRoot.accentForPercent(modelData.pct)
+                                radius: 3
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Text { text: "RAM"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Medium; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                        Item { Layout.fillWidth: true }
-                        Text { text: monitorRoot.ramUsed.toFixed(1) + " / " + monitorRoot.ramTotal.toFixed(1) + " GB"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Bold; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                    }
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: 300
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 6
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 400
+                                    }
+                                }
 
-                        Rectangle {
-                            anchors.fill: parent
-                            color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
-                            opacity: 0.12
-                            radius: 3
-                        }
-
-                        Rectangle {
-                            id: ramProgressBar
-                            height: parent.height
-                            width: parent.width * (monitorRoot.ramPercent / 100.0)
-                            color: monitorRoot.ramPercent >= 90 ? "#f38ba8" : (monitorRoot.ramPercent >= 70 ? "#f9e2af" : (monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa"))
-                            radius: 3
-
-                            Behavior on width { 
-                                NumberAnimation { duration: 250; easing.type: Easing.OutCubic } 
-                            }
-                        }
-                    }
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 3
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Text { text: "Disk Usage"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Medium; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                        Item { Layout.fillWidth: true }
-                        Text { text: monitorRoot.diskUsed + " / " + monitorRoot.diskTotal + " GB"; font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Bold; color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff" }
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 6
-
-                        Rectangle {
-                            anchors.fill: parent
-                            color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
-                            opacity: 0.12
-                            radius: 3
-                        }
-
-                        Rectangle {
-                            id: diskProgressBar
-                            height: parent.height
-                            width: parent.width * (monitorRoot.diskPercent / 100.0)
-                            color: monitorRoot.diskPercent >= 90 ? "#f38ba8" : (monitorRoot.diskPercent >= 70 ? "#f9e2af" : (monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa"))
-                            radius: 3
-
-                            Behavior on width { 
-                                NumberAnimation { duration: 250; easing.type: Easing.OutCubic } 
+                                Rectangle {
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    width: Math.min(parent.width, 20)
+                                    radius: 3
+                                    color: "#30ffffff"
+                                    visible: modelData.barWidth > 0.02
+                                }
                             }
                         }
                     }
@@ -421,53 +432,89 @@ Item {
             }
 
             Rectangle {
-                id: listDivider
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
-                color: monitorRoot.theme ? monitorRoot.theme.theme_outline : "#26ffffff"
+                color: "#18ffffff"
                 Layout.topMargin: 12
-                Layout.bottomMargin: 8
+                Layout.bottomMargin: 10
             }
 
-            Text {
-                id: tasksHeaderLabel
-                text: "Processes"
-                font.family: "Rubik"
-                font.pixelSize: 13
-                font.weight: Font.Bold
-                color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
-                Layout.bottomMargin: 6
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 22
+                spacing: 6
+
+                Text {
+                    text: "top_apps"
+                    font.family: "Material Symbols Outlined"
+                    font.pixelSize: 13
+                    color: "#55ffffff"
+                }
+
+                Text {
+                    text: "Processes"
+                    font.family: "Rubik"
+                    font.pixelSize: 11
+                    font.weight: Font.SemiBold
+                    color: "#99ffffff"
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Text {
+                    text: "by cpu"
+                    font.family: "Rubik"
+                    font.pixelSize: 9
+                    color: "#33ffffff"
+                }
             }
 
             Item {
-                id: listBoundsFrame
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.topMargin: 4
 
                 ListView {
                     id: processListView
                     anchors.fill: parent
                     model: processListModel
-                    spacing: 4
+                    spacing: 3
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
 
                     delegate: Rectangle {
                         width: processListView.width
-                        height: 26
-                        color: procMouse.containsMouse ? "#0dffffff" : "transparent"
-                        radius: 4
+                        height: 28
+                        color: procMouse.containsMouse ? "#0effffff" : "transparent"
+                        radius: 6
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 120
+                            }
+                        }
 
                         RowLayout {
                             anchors.fill: parent
                             anchors.leftMargin: 8
                             anchors.rightMargin: 8
+                            spacing: 0
+
+                            Text {
+                                text: (index + 1) + "."
+                                font.family: "Rubik"
+                                font.pixelSize: 10
+                                color: "#33ffffff"
+                                Layout.preferredWidth: 18
+                            }
 
                             Text {
                                 text: model.name
                                 font.family: "Rubik"
                                 font.pixelSize: 11
-                                color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#ffffff"
+                                color: "#ccffffff"
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
@@ -475,9 +522,14 @@ Item {
                             Text {
                                 text: model.cpu + "%"
                                 font.family: "Rubik"
-                                font.pixelSize: 11
-                                font.weight: Font.Bold
-                                color: parseFloat(model.cpu) >= 15 ? "#f38ba8" : (monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa")
+                                font.pixelSize: 10
+                                font.weight: Font.SemiBold
+                                color: parseFloat(model.cpu) >= 15 ? "#f38ba8" : parseFloat(model.cpu) >= 5 ? "#f9e2af" : "#55ffffff"
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 200
+                                    }
+                                }
                             }
                         }
 

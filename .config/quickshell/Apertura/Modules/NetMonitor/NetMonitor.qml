@@ -17,7 +17,7 @@ Item {
     property string ipAddress: "0.0.0.0"
     property string downloadSpeed: "0 B/s"
     property string uploadSpeed: "0 B/s"
-    
+
     property string connectionIcon: activeIface === "None" ? "cloud_off" : "cloud_upload"
 
     Timer {
@@ -55,18 +55,7 @@ Item {
 
     Process {
         id: netFetcher
-        command: [
-            "sh", "-c",
-            "iface=$(ip route show | awk '$1 == \"default\" {print $5; exit}'); " +
-            "if [ -z '$iface' ]; then iface=$(ip -4 link show up | awk -F': ' '$2 != \"lo\" {print $2; exit}'); fi; " +
-            "if [ -n '$iface' ]; then " +
-            "  ip_addr=$(ip -4 addr show dev \"$iface\" | awk '$1 == \"inet\" {split($2, a, \"/\"); print a[1]; exit}'); " +
-            "  stats=$(awk -v d=\"$iface\" '{gsub(/[: \t]+/, \" \"); if ($1 == d) print $2\" \"$10}' /proc/net/dev); " +
-            "  echo \"$iface $ip_addr $stats\"; " +
-            "else " +
-            "  echo 'None 0.0.0.0 0 0'; " +
-            "fi"
-        ]
+        command: ["sh", "-c", "iface=$(ip route show | awk '$1 == \"default\" {print $5; exit}'); " + "if [ -z '$iface' ]; then iface=$(ip -4 link show up | awk -F': ' '$2 != \"lo\" {print $2; exit}'); fi; " + "if [ -n '$iface' ]; then " + "  ip_addr=$(ip -4 addr show dev \"$iface\" | awk '$1 == \"inet\" {split($2, a, \"/\"); print a[1]; exit}'); " + "  stats=$(awk -v d=\"$iface\" '{gsub(/[: \t]+/, \" \"); if ($1 == d) print $2\" \"$10}' /proc/net/dev); " + "  echo \"$iface $ip_addr $stats\"; " + "else " + "  echo 'None 0.0.0.0 0 0'; " + "fi"]
         running: false
 
         stdout: StdioCollector {
@@ -75,9 +64,11 @@ Item {
 
             onTextChanged: {
                 let cleaned = text.trim();
-                if (!cleaned) return;
+                if (!cleaned)
+                    return;
                 let parts = cleaned.split(" ");
-                if (parts.length < 4) return;
+                if (parts.length < 4)
+                    return;
 
                 netRoot.activeIface = parts[0];
                 netRoot.ipAddress = parts[1];
@@ -95,7 +86,8 @@ Item {
             }
 
             function formatBytes(bytes) {
-                if (bytes === 0) return "0 B/s";
+                if (bytes === 0)
+                    return "0 B/s";
                 let k = 1024;
                 let sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
                 let i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -107,7 +99,7 @@ Item {
     Timer {
         id: netTicker
         interval: 3000
-        running: true  
+        running: true
         repeat: true
         triggeredOnStart: true
         onTriggered: {
@@ -124,23 +116,19 @@ Item {
         id: netHitbox
         anchors.fill: parent
         color: "transparent"
-        radius: 0
 
         Text {
             anchors.centerIn: parent
             text: netRoot.connectionIcon
             font.family: "Material Symbols Outlined"
-            font.pixelSize: 20
-            color: activeIface === "None" ? "#ff5555" : (rootScope.theme ? rootScope.theme.theme_fg : "#ffffff")
-        }
+            font.pixelSize: 18
+            color: netRoot.activeIface === "None" ? "#f38ba8" : (iconMouseArea.containsMouse ? (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa") : (rootScope.theme ? rootScope.theme.theme_fg : "#cdd6f4"))
 
-        Rectangle {
-            id: netHoverOverlay
-            anchors.fill: parent
-            radius: 0
-            color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
-            opacity: iconMouseArea.containsMouse ? 0.3 : 0.0
-            z: 1
+            Behavior on color {
+                ColorAnimation {
+                    duration: 200
+                }
+            }
         }
 
         MouseArea {
@@ -155,7 +143,7 @@ Item {
     PanelDrawer {
         id: drawerTemplate
         isOpen: false
-        drawerHeight: 180
+        drawerHeight: 192
         modalToken: "netmonitor"
         anchorTop: false
 
@@ -179,73 +167,338 @@ Item {
         ColumnLayout {
             id: mainContainerLayout
             anchors.fill: parent
-            anchors.margins: 12
+            anchors.margins: 16
             spacing: 0
             focus: true
 
-            Item {
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 32
+                Layout.preferredHeight: 28
+                spacing: 8
+
+                Rectangle {
+                    width: 3
+                    height: 14
+                    radius: 0
+                    color: netRoot.activeIface === "None" ? "#f38ba8" : (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa")
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 300
+                        }
+                    }
+                }
 
                 Text {
-                    text: "Network Status"
+                    text: "Network"
                     font.family: "Rubik"
-                    font.pixelSize: 16
-                    font.weight: Font.Bold
-                    color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff"
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: 2
+                    font.pixelSize: 14
+                    font.weight: Font.SemiBold
+                    color: rootScope.theme ? rootScope.theme.theme_fg : "#cdd6f4"
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Rectangle {
+                    width: statusDot.implicitWidth + statusLabel.implicitWidth + 14
+                    height: 18
+                    radius: 0
+                    color: netRoot.activeIface === "None" ? "#25f38ba8" : "#1ca6e3a1"
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 300
+                        }
+                    }
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 5
+
+                        Rectangle {
+                            id: statusDot
+                            width: 5
+                            height: 5
+                            radius: 0
+                            color: netRoot.activeIface === "None" ? "#f38ba8" : "#a6e3a1"
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 300
+                                }
+                            }
+
+                            SequentialAnimation on opacity {
+                                running: netRoot.activeIface !== "None" && drawerTemplate.isOpen
+                                loops: Animation.Infinite
+                                NumberAnimation {
+                                    to: 0.3
+                                    duration: 800
+                                    easing.type: Easing.InOutSine
+                                }
+                                NumberAnimation {
+                                    to: 1.0
+                                    duration: 800
+                                    easing.type: Easing.InOutSine
+                                }
+                            }
+                        }
+
+                        Text {
+                            id: statusLabel
+                            text: netRoot.activeIface === "None" ? "Offline" : "Online"
+                            font.family: "Rubik"
+                            font.pixelSize: 9
+                            font.weight: Font.Medium
+                            color: netRoot.activeIface === "None" ? "#f38ba8" : "#a6e3a1"
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 300
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                color: rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff"
-                Layout.bottomMargin: 12
+                height: 1
+                color: "#18ffffff"
+                Layout.bottomMargin: 14
             }
 
-            ColumnLayout {
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 12
+                spacing: 10
 
-                RowLayout {
+                Rectangle {
                     Layout.fillWidth: true
+                    height: 72
+                    color: "transparent"
+                    border.color: "#14ffffff"
+                    border.width: 1
+
                     ColumnLayout {
-                        spacing: 2
-                        Text { text: "Interface"; font.family: "Rubik"; font.pixelSize: 11; color: rootScope.theme ? Qt.alpha(rootScope.theme.theme_fg, 0.35) : "#59ffffff" }
-                        Text { text: netRoot.activeIface; font.family: "Rubik"; font.pixelSize: 13; font.weight: Font.Bold; color: rootScope.theme ? rootScope.theme.theme_primary : "#ffffff" }
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 4
+
+                        RowLayout {
+                            spacing: 5
+                            Text {
+                                text: "router"
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 12
+                                color: "#44ffffff"
+                            }
+                            Text {
+                                text: "Interface"
+                                font.family: "Rubik"
+                                font.pixelSize: 10
+                                color: "#44ffffff"
+                            }
+                        }
+
+                        Text {
+                            text: netRoot.activeIface
+                            font.family: "Rubik"
+                            font.pixelSize: 15
+                            font.weight: Font.SemiBold
+                            color: netRoot.activeIface === "None" ? "#f38ba8" : (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa")
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 300
+                                }
+                            }
+                        }
                     }
-                    Item { Layout.fillWidth: true }
-                    ColumnLayout {
-                        spacing: 2; Layout.alignment: Qt.AlignRight
-                        Text { text: "IP Address"; font.family: "Rubik"; font.pixelSize: 11; color: rootScope.theme ? Qt.alpha(rootScope.theme.theme_fg, 0.35) : "#59ffffff" }
-                        Text { text: netRoot.ipAddress; font.family: "Rubik"; font.pixelSize: 13; font.weight: Font.Bold; color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff"; Layout.alignment: Qt.AlignRight }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: 2
+                        color: netRoot.activeIface === "None" ? "#f38ba8" : (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa")
+                        opacity: 0.6
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 300
+                            }
+                        }
                     }
                 }
 
-                Rectangle { Layout.fillWidth: true; height: 1; color: rootScope.theme ? Qt.alpha(rootScope.theme.theme_outline, 0.5) : "#1affffff" }
-
-                RowLayout {
+                Rectangle {
                     Layout.fillWidth: true
+                    height: 72
+                    color: "transparent"
+                    border.color: "#14ffffff"
+                    border.width: 1
+
                     ColumnLayout {
-                        spacing: 2
-                        Text { text: "Download"; font.family: "Rubik"; font.pixelSize: 11; color: rootScope.theme ? Qt.alpha(rootScope.theme.theme_fg, 0.35) : "#59ffffff" }
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 4
+
                         RowLayout {
-                            spacing: 6
-                            Text { text: "arrow_downward"; font.family: "Material Symbols Outlined"; font.pixelSize: 16; color: rootScope.theme ? rootScope.theme.theme_primary : "#ffffff" }
-                            Text { text: netRoot.downloadSpeed; font.family: "Rubik"; font.pixelSize: 13; font.weight: Font.Bold; color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff" }
+                            spacing: 5
+                            Text {
+                                text: "lan"
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 12
+                                color: "#44ffffff"
+                            }
+                            Text {
+                                text: "IP Address"
+                                font.family: "Rubik"
+                                font.pixelSize: 10
+                                color: "#44ffffff"
+                            }
+                        }
+
+                        Text {
+                            text: netRoot.ipAddress
+                            font.family: "Rubik"
+                            font.pixelSize: 13
+                            font.weight: Font.SemiBold
+                            color: "#ccffffff"
                         }
                     }
-                    Item { Layout.fillWidth: true }
-                    ColumnLayout {
-                        spacing: 2; Layout.alignment: Qt.AlignRight
-                        Text { text: "Upload"; font.family: "Rubik"; font.pixelSize: 11; color: rootScope.theme ? Qt.alpha(rootScope.theme.theme_fg, 0.35) : "#59ffffff" }
-                        RowLayout {
-                            spacing: 6; Layout.alignment: Qt.AlignRight
-                            Text { text: "arrow_upward"; font.family: "Material Symbols Outlined"; font.pixelSize: 16; color: rootScope.theme ? rootScope.theme.theme_primary : "#ffffff" }
-                            Text { text: netRoot.uploadSpeed; font.family: "Rubik"; font.pixelSize: 13; font.weight: Font.Bold; color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff"; Layout.alignment: Qt.AlignRight }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: 2
+                        color: "#40ffffff"
+                        opacity: 0.6
+                    }
+                }
+            }
+
+            Item {
+                height: 10
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 60
+                    color: "transparent"
+                    border.color: "#14ffffff"
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        Rectangle {
+                            width: 30
+                            height: 30
+                            radius: 0
+                            color: "#1589b4fa"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "arrow_downward"
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 15
+                                color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
+                            }
                         }
+
+                        ColumnLayout {
+                            spacing: 2
+                            Text {
+                                text: "Download"
+                                font.family: "Rubik"
+                                font.pixelSize: 9
+                                color: "#44ffffff"
+                            }
+                            Text {
+                                text: netRoot.downloadSpeed
+                                font.family: "Rubik"
+                                font.pixelSize: 13
+                                font.weight: Font.SemiBold
+                                color: "#ddffffff"
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: 2
+                        color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
+                        opacity: 0.5
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 60
+                    color: "transparent"
+                    border.color: "#14ffffff"
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        Rectangle {
+                            width: 30
+                            height: 30
+                            radius: 0
+                            color: "#18a6e3a1"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "arrow_upward"
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 15
+                                color: "#a6e3a1"
+                            }
+                        }
+
+                        ColumnLayout {
+                            spacing: 2
+                            Text {
+                                text: "Upload"
+                                font.family: "Rubik"
+                                font.pixelSize: 9
+                                color: "#44ffffff"
+                            }
+                            Text {
+                                text: netRoot.uploadSpeed
+                                font.family: "Rubik"
+                                font.pixelSize: 13
+                                font.weight: Font.SemiBold
+                                color: "#ddffffff"
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: 2
+                        color: "#a6e3a1"
+                        opacity: 0.5
                     }
                 }
             }

@@ -8,7 +8,6 @@ import Quickshell.Wayland
 import Quickshell.Io
 import "../.."
 
-//TODO: Fix audio not start
 Item {
     id: recordRoot
 

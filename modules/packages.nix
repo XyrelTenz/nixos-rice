@@ -17,6 +17,8 @@
     fish
     starship
     ripgrep
+    wf-recorder
+    slurp
 
     # ── Desktop & Apps ───────────────────────────────────────────────────
     kdePackages.dolphin

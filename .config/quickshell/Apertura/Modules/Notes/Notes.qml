@@ -960,8 +960,8 @@ Item {
                 y: posY
                 width: 620
                 height: 390
-                color: "#d80d0d14"
-                border.color: "#20ffffff"
+                color: "#11111b"
+                border.color: rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff"
                 border.width: 1
 
                 layer.enabled: true
@@ -1074,8 +1074,8 @@ Item {
             x: 0
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 12
-            color: "#d80d0d14"
-            border.color: "#1effffff"
+            color: "#11111b"
+            border.color: rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff"
             border.width: 1
             focus: true
             clip: true

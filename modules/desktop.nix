@@ -14,18 +14,19 @@
     portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
   };
 
-  # Display manager
-  services.displayManager.sddm = {
+  # Display manager (SilentSDDM)
+  programs.silentSDDM = {
     enable = true;
-    wayland.enable = true;
+    theme = "default";
   };
 
-  # qylock SDDM theme
+
+  # Lockscreen (qylock) — used for desktop locking only, not as the SDDM theme
   programs.qylock = {
     enable = true;
     theme = "clockwork";
-    sddm.enable = true;        # installs theme + sets it as active SDDM theme
-    quickshell.enable = true;  # adds `qylock-lock` to PATH
+    sddm.enable = false;       # Disables qylock as SDDM theme, using sddm-astronaut instead
+    quickshell.enable = true;  # Keeps qylock-lock in PATH for desktop locking
 
     themeOptions = {
       clockwork.orbital = {

@@ -16,9 +16,12 @@
       url = "github:Darkkal44/qylock";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    silentSDDM = {
+      url = "github:uiriansan/SilentSDDM";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-cachyos-kernel = {
       url = "github:xddxdd/nix-cachyos-kernel/release";
-      # Do NOT follow nixpkgs — version must match what was used to build the cache
     };
   };
 
@@ -29,6 +32,7 @@
     home-manager,
     antigravity-nix,
     qylock,
+    silentSDDM,
     nix-cachyos-kernel,
     ...
   }: {
@@ -36,8 +40,8 @@
       system = "x86_64-linux";
       specialArgs = {inherit inputs;};
       modules = [
-        # 2. Add the module here
         qylock.nixosModules.default
+        silentSDDM.nixosModules.default
 
         hyprland.nixosModules.default
         ./hardware-configuration.nix
@@ -56,8 +60,6 @@
           ];
           nixpkgs.config.allowUnfree = true;
         }
-
-        # CachyOS kernel overlay — exposes pkgs.cachyosKernels.*
         {
           nixpkgs.overlays = [ nix-cachyos-kernel.overlays.pinned ];
         }

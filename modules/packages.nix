@@ -42,9 +42,9 @@
     vue-language-server
     lua-language-server
     gopls
-    gotools 
+    gotools
     golines
-    go-tools 
+    go-tools
     sqls
     lazygit
     gcc
@@ -59,30 +59,28 @@
     nixd
     alejandra
     kdePackages.qtdeclarative
-    prettier 
-    ktfmt 
-    google-java-format 
-    rustfmt 
+    prettier
+    ktfmt
+    google-java-format
+    rustfmt
 
-    zed-editor-fhs 
+    zed-editor-fhs
 
     grim
     slurp
     satty
     cava
     matugen
-    swww
-    imagemagick   # required by WallpaperPicker for thumbnail generation & webp conversion
-    ffmpeg        # required by WallpaperPicker for video wallpaper thumbnails
-    mpvpaper      # video wallpaper playback
+    awww
     (symlinkJoin {
       name = "quickshell-wrapped";
       paths = [quickshell];
       nativeBuildInputs = [makeWrapper];
       postBuild = ''
         wrapProgram $out/bin/qs \
-          --prefix PATH : "${lib.makeBinPath [(python3.withPackages (ps: [ps.pyxdg])) bluez networkmanager wireplumber matugen swww cava imagemagick ffmpeg]}" \
-          --prefix QML2_IMPORT_PATH : "${kdePackages.qt5compat}/lib/qt-6/qml"
+          --prefix PATH : "${lib.makeBinPath [(python3.withPackages (ps: [ps.pyxdg])) bluez networkmanager wireplumber matugen awww cava bash]}" \
+          --prefix QML2_IMPORT_PATH : "${kdePackages.qt5compat}/lib/qt-6/qml" \
+          --prefix QT_PLUGIN_PATH : "${kdePackages.qtimageformats}/lib/qt-6/plugins"
       '';
     })
   ];

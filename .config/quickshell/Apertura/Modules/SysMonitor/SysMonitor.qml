@@ -536,14 +536,13 @@ Item {
                 }
             }
 
-            // Divider
             Rectangle {
                 Layout.fillWidth: true
                 height: 1
                 color: "#18ffffff"
             }
 
-            // ── Process list ──────────────────────────────────────────────────
+            // Process List
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -626,7 +625,7 @@ Item {
                                 }
                             }
 
-                            // CPU %
+                            // CPU Percentage
                             Text {
                                 text: model.cpu + "%"
                                 font.family: "Rubik"
@@ -644,7 +643,6 @@ Item {
                             }
                         }
 
-                        // Bottom rule
                         Rectangle {
                             anchors.bottom: parent.bottom
                             anchors.left: parent.left

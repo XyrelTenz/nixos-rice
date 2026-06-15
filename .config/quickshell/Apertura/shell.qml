@@ -27,6 +27,14 @@ import "Widgets/VolumeHud"
 import "Widgets/WorkspacePreview"
 import "Widgets/DesktopCava"
 
+//TODO: Improve architecture
+//TODO: Improve UI for power menu
+//TODO: Migrate Notes to Control Center
+//TODO: Migrate Screen Record To Control Center
+//TODO: Migrate Net Monitor to Control Center
+//TODO: Improve WIFI UI and Fix WIFI implementation
+//TODO: Fix Desktop Audio
+
 Scope {
     id: rootScope
 
@@ -34,33 +42,35 @@ Scope {
     property var configurationAsset: Config
 
     /** @property alias theme: Exposes global Canvas/UI styling metrics to submodules */
-    property alias theme: theme 
+    property alias theme: theme
 
     /** @property var sharedPinnedApps: Holds application configurations pinned inside the launcher view */
     property var sharedPinnedApps: []
 
     /** @property var activeModal: Tracks currently active modal context name to ensure singular overlay states */
     property var activeModal: null
-    
+
     /** @property bool audioSliderActive: Flag preventing focus drops when interacting with audio overlays */
     property bool audioSliderActive: false
-    
+
     /** @property var instantiatedBars: Dictionary mapping screen name keys to instantiated PanelWindow configurations */
     property var instantiatedBars: ({})
-    
+
     /** @property bool sessionLocked: Flag indicating if the compositor layer is locked */
     property bool sessionLocked: false
 
     /** @property var notificationItem: Global reference pointer to the underlying Notification visual server element */
     property var notificationItem: null
-    
+
     /** @property var sysMonitorItem: Global reference pointer to the hardware telemetry analyzer instance */
     property var sysMonitorItem: null
-    
+
     /** @property bool notificationsEnabled: Global toggle for filtering and routing desktop notification servers */
     property bool notificationsEnabled: true
 
-    Theme { id: theme }
+    Theme {
+        id: theme
+    }
 
     // IO & System Data Services
 
@@ -72,16 +82,17 @@ Scope {
     FileView {
         id: pinCacheReader
         path: Quickshell.env("HOME") + "/.cache/quickshell_launcher_pins.json"
-        
+
         onTextChanged: {
             let cleanText = text().trim();
-            if (!cleanText || cleanText === "[]") return;
+            if (!cleanText || cleanText === "[]")
+                return;
             try {
                 let parsed = JSON.parse(cleanText);
                 if (parsed && parsed.pins) {
                     rootScope.sharedPinnedApps = parsed.pins;
                 }
-            } catch(e) {}
+            } catch (e) {}
         }
     }
 
@@ -121,10 +132,14 @@ Scope {
      * @function requestOpen
      * @param {string} modalName - Global routing tracker to map modal active focal states.
      */
-    function requestOpen(modalName) { activeModal = modalName; }
-    
+    function requestOpen(modalName) {
+        activeModal = modalName;
+    }
+
     /** @function dismissAll: Utility wrapper resetting focal states down across modular sub-containers */
-    function dismissAll() { activeModal = null; }
+    function dismissAll() {
+        activeModal = null;
+    }
 
     /**
      * @function checkIsVertical
@@ -135,7 +150,7 @@ Scope {
     function checkIsVertical(wsId) {
         let targetWsObj = Hyprland.workspaces.values.find(ws => ws.id === wsId);
         let monitorObj = targetWsObj ? targetWsObj.monitor : (Hyprland.activeMonitor || null);
-        
+
         if (monitorObj) {
             return monitorObj.height > monitorObj.width;
         }
@@ -150,19 +165,26 @@ Scope {
      */
     PanelWindow {
         id: globalWorkspacePreview
-        
+
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "quickshell-workspace-preview"
         WlrLayershell.keyboardFocus: WlrLayershell.None
 
-        anchors { left: true; top: true }
+        anchors {
+            left: true
+            top: true
+        }
 
         property int targetWorkspace: -1
         property int marginLeft: 0
         property int marginTop: 0
 
-        function requestDismiss() { dismissTimer.restart(); }
-        function cancelDismiss() { dismissTimer.stop(); }
+        function requestDismiss() {
+            dismissTimer.restart();
+        }
+        function cancelDismiss() {
+            dismissTimer.stop();
+        }
 
         Timer {
             id: dismissTimer
@@ -186,7 +208,7 @@ Scope {
             anchors.fill: parent
             hoverEnabled: true
             acceptedButtons: Qt.NoButton
-            
+
             onEntered: globalWorkspacePreview.cancelDismiss()
             onExited: globalWorkspacePreview.requestDismiss()
 
@@ -194,28 +216,46 @@ Scope {
                 id: popupCard
                 width: parent.width
                 height: parent.height
-                color: "#9911111b" 
+                color: "#9911111b"
                 clip: true
 
                 states: [
                     State {
-                        name: "visible"; when: previewEngine.active
-                        PropertyChanges { target: popupCard; opacity: 1.0 }
+                        name: "visible"
+                        when: previewEngine.active
+                        PropertyChanges {
+                            target: popupCard
+                            opacity: 1.0
+                        }
                     },
                     State {
-                        name: "hidden"; when: !previewEngine.active
-                        PropertyChanges { target: popupCard; opacity: 0.0 }
+                        name: "hidden"
+                        when: !previewEngine.active
+                        PropertyChanges {
+                            target: popupCard
+                            opacity: 0.0
+                        }
                     }
                 ]
 
                 transitions: [
                     Transition {
-                        from: "hidden"; to: "visible"
-                        NumberAnimation { target: popupCard; property: "opacity"; duration: 150 }
+                        from: "hidden"
+                        to: "visible"
+                        NumberAnimation {
+                            target: popupCard
+                            property: "opacity"
+                            duration: 150
+                        }
                     },
                     Transition {
-                        from: "visible"; to: "hidden"
-                        NumberAnimation { target: popupCard; property: "opacity"; duration: 150 }
+                        from: "visible"
+                        to: "hidden"
+                        NumberAnimation {
+                            target: popupCard
+                            property: "opacity"
+                            duration: 150
+                        }
                     }
                 ]
 
@@ -251,10 +291,10 @@ Scope {
                 if (globalWorkspacePreview.targetWorkspace !== currentWsId) {
                     globalWorkspacePreview.targetWorkspace = currentWsId;
                     globalWorkspacePreview.cancelDismiss();
-                    
+
                     let activeMonitorObj = Hyprland.activeMonitor;
                     if (activeMonitorObj) {
-                        globalWorkspacePreview.marginLeft = 54 + 12; 
+                        globalWorkspacePreview.marginLeft = 54 + 12;
                         globalWorkspacePreview.marginTop = Math.round((activeMonitorObj.height - (checkIsVertical(currentWsId) ? 700 : 300)) / 2);
                     }
                     globalWorkspacePreview.requestDismiss();
@@ -322,7 +362,9 @@ Scope {
         model: Quickshell.screens
 
         delegate: Scope {
-            VolumeHud { targetScreen: modelData }
+            VolumeHud {
+                targetScreen: modelData
+            }
 
             DesktopClock {
                 screen: modelData
@@ -337,8 +379,12 @@ Scope {
                 property string screenKey: modelData.name
                 visible: true
 
-                Component.onCompleted: { rootScope.instantiatedBars[screenKey] = mainBarWindow; }
-                Component.onDestruction: { delete rootScope.instantiatedBars[screenKey]; }
+                Component.onCompleted: {
+                    rootScope.instantiatedBars[screenKey] = mainBarWindow;
+                }
+                Component.onDestruction: {
+                    delete rootScope.instantiatedBars[screenKey];
+                }
 
                 property alias appLauncherModule: appLauncherItem
                 property alias wallpaperModule: wallpaperItem
@@ -347,28 +393,35 @@ Scope {
                 property alias notesModule: notesItem
                 property alias sysMonitorModule: sysMonitorItem
                 property alias netMonitorModule: netMonitorItem
-                
+
                 readonly property var previewPopup: globalWorkspacePreview
 
                 screen: modelData
-                anchors { left: true; top: true; bottom: true }
+                anchors {
+                    left: true
+                    top: true
+                    bottom: true
+                }
                 implicitWidth: 54
                 color: "transparent"
 
                 WlrLayershell.layer: WlrLayer.Top
                 WlrLayershell.namespace: "quickshell-bar"
-                WlrLayershell.margins.top: 12; WlrLayershell.margins.bottom: 12; WlrLayershell.margins.left: 12; WlrLayershell.margins.right: 0
+                WlrLayershell.margins.top: 12
+                WlrLayershell.margins.bottom: 12
+                WlrLayershell.margins.left: 12
+                WlrLayershell.margins.right: 0
 
                 Rectangle {
                     anchors.fill: parent
                     color: "#9911111b"
                     clip: true
 
-                    MouseArea { 
+                    MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
                         z: -1
-                        onPressed: rootScope.dismissAll() 
+                        onPressed: rootScope.dismissAll()
                     }
 
                     ColumnLayout {
@@ -384,10 +437,20 @@ Scope {
                             Layout.alignment: Qt.AlignHCenter
                             spacing: 12
 
-                            AppLauncher { id: appLauncherItem; anchors.horizontalCenter: parent.horizontalCenter }
-                            Wallpaper { id: wallpaperItem; anchors.horizontalCenter: parent.horizontalCenter; property int barHeight: mainBarWindow.height }
-                            Calendar { id: calendarItem; anchors.horizontalCenter: parent.horizontalCenter }
-                            
+                            AppLauncher {
+                                id: appLauncherItem
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+                            Wallpaper {
+                                id: wallpaperItem
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                property int barHeight: mainBarWindow.height
+                            }
+                            Calendar {
+                                id: calendarItem
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+
                             Item {
                                 width: 32
                                 height: 56
@@ -399,20 +462,23 @@ Scope {
                                 }
                             }
 
-                            Workspaces { 
-                                theme: rootScope.theme 
-                                anchors.horizontalCenter: parent.horizontalCenter; z: 1 
+                            Workspaces {
+                                theme: rootScope.theme
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                z: 1
                             }
                         }
 
-                        Item { Layout.fillHeight: true }
+                        Item {
+                            Layout.fillHeight: true
+                        }
 
                         ColumnLayout {
                             id: bottomGroupControls
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignHCenter
                             Layout.maximumHeight: parent.height - topStackColumn.height - 96
-                            spacing: 8 
+                            spacing: 8
                             property bool isExpanded: false
 
                             Rectangle {
@@ -469,91 +535,57 @@ Scope {
                                     width: bottomModulesFlickable.width
                                     spacing: 8
 
-                                    /**
-                                     * @component DrawerModule
-                                     * Rewritten to derive from Loader. This separates the layout engine 
-                                     * constraints from the target execution block cleanly.
-                                     */
-                                    component DrawerModule : Item {
-                                        id: moduleWrapper
-                                        property bool isPinned: false
-                                        property bool moduleAvailable: true
-                                        default property alias moduleData: container.data
-
-                                        readonly property bool shouldBeActive: (bottomGroupControls.isExpanded || isPinned) && moduleAvailable
-
-                                        property int targetHeight: shouldBeActive ? 38 : 0
-                                        Behavior on targetHeight {
-                                            NumberAnimation {
-                                                duration: 200
-                                                easing.type: Easing.OutCubic
-                                            }
-                                        }
-
-                                        Layout.preferredWidth: shouldBeActive ? 38 : 0
-                                        Layout.preferredHeight: targetHeight
-                                        Layout.alignment: Qt.AlignHCenter
-                                        
-                                        visible: targetHeight > 0
-                                        opacity: targetHeight / 38
-
-                                        width: 38
-                                        height: 38
-
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            radius: 0
-                                            color: "transparent"
-                                            border.width: isPinned && bottomGroupControls.isExpanded ? 1 : 0
-                                            border.color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff"
-                                        }
-
-                                        Item {
-                                            id: container
-                                            width: 32
-                                            height: 32
+                                    DrawerModule {
+                                        id: wrapBattery
+                                        moduleAvailable: batteryItem.isLaptop
+                                        Battery {
+                                            id: batteryItem
                                             anchors.centerIn: parent
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            acceptedButtons: Qt.RightButton
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: (mouse) => {
-                                                if (mouse.button === Qt.RightButton) {
-                                                    moduleWrapper.isPinned = !moduleWrapper.isPinned
-                                                }
-                                            }
                                         }
                                     }
 
                                     DrawerModule {
-                                        id: wrapBattery
-                                        moduleAvailable: batteryItem.isLaptop
-                                        Battery { id: batteryItem; anchors.centerIn: parent }
+                                        id: wrapMedia
+                                        Media {
+                                            id: mediaItem
+                                            anchors.centerIn: parent
+                                        }
                                     }
 
-                                    DrawerModule { 
-                                        id: wrapMedia
-                                        Media { id: mediaItem; anchors.centerIn: parent } 
+                                    DrawerModule {
+                                        id: wrapNotes
+                                        Notes {
+                                            id: notesItem
+                                            anchors.centerIn: parent
+                                        }
                                     }
-                                    
-                                    DrawerModule { id: wrapNotes; Notes { id: notesItem; anchors.centerIn: parent } }
-                                    
-                                    DrawerModule { 
+
+                                    DrawerModule {
                                         id: wrapSys
-                                        SysMonitor { 
+                                        SysMonitor {
                                             id: sysMonitorItem
                                             theme: rootScope.theme
                                             anchors.centerIn: parent
                                             active: controlCenterItem.menuOpen
-                                            Component.onCompleted: rootScope.sysMonitorItem = this 
-                                        } 
+                                            Component.onCompleted: rootScope.sysMonitorItem = this
+                                        }
                                     }
-                                    
-                                    DrawerModule { id: wrapNet; NetMonitor { id: netMonitorItem; anchors.centerIn: parent } }
-                                    
-                                    DrawerModule { id: wrapRecord; ScreenRecord { id: screenRecordItem; anchors.centerIn: parent } }
+
+                                    DrawerModule {
+                                        id: wrapNet
+                                        NetMonitor {
+                                            id: netMonitorItem
+                                            anchors.centerIn: parent
+                                        }
+                                    }
+
+                                    DrawerModule {
+                                        id: wrapRecord
+                                        ScreenRecord {
+                                            id: screenRecordItem
+                                            anchors.centerIn: parent
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -598,6 +630,64 @@ Scope {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+                                     * @component DrawerModule
+                                     * Rewritten to derive from Loader. This separates the layout engine
+                                     * constraints from the target execution block cleanly.
+                                     */
+    component DrawerModule: Item {
+        id: moduleWrapper
+        property bool isPinned: false
+        property bool moduleAvailable: true
+        default property alias moduleData: container.data
+
+        readonly property bool shouldBeActive: (bottomGroupControls.isExpanded || isPinned) && moduleAvailable
+
+        property int targetHeight: shouldBeActive ? 38 : 0
+        Behavior on targetHeight {
+            NumberAnimation {
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Layout.preferredWidth: shouldBeActive ? 38 : 0
+        Layout.preferredHeight: targetHeight
+        Layout.alignment: Qt.AlignHCenter
+
+        visible: targetHeight > 0
+        opacity: targetHeight / 38
+
+        width: 38
+        height: 38
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 0
+            color: "transparent"
+            border.width: isPinned && bottomGroupControls.isExpanded ? 1 : 0
+            border.color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff"
+        }
+
+        Item {
+            id: container
+            width: 32
+            height: 32
+            anchors.centerIn: parent
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton
+            cursorShape: Qt.PointingHandCursor
+            onClicked: mouse => {
+                if (mouse.button === Qt.RightButton) {
+                    moduleWrapper.isPinned = !moduleWrapper.isPinned;
                 }
             }
         }

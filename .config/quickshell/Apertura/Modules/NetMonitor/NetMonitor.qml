@@ -17,8 +17,21 @@ Item {
     property string ipAddress: "0.0.0.0"
     property string downloadSpeed: "0 B/s"
     property string uploadSpeed: "0 B/s"
+    property real downloadBytes: 0
+    property real uploadBytes: 0
+    property real maxObservedDown: 1024
+    property real maxObservedUp: 1024
 
-    property string connectionIcon: activeIface === "None" ? "cloud_off" : "cloud_upload"
+    property bool isOnline: activeIface !== "None"
+
+    property color primaryColor: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
+    property color fgColor: rootScope.theme ? rootScope.theme.theme_fg : "#cdd6f4"
+    property color offlineColor: "#f38ba8"
+    property color uploadColor: "#a6e3a1"
+    property color surfaceColor: "#0dffffff"
+    property color borderColor: "#18ffffff"
+    property color mutedText: "#66ffffff"
+    property color dimText: "#33ffffff"
 
     Timer {
         id: osdAutohideTimer
@@ -78,8 +91,17 @@ Item {
                 let curTx = parseInt(parts[3]);
 
                 if (prevRx !== 0 && curRx >= prevRx) {
-                    netRoot.downloadSpeed = formatBytes(curRx - prevRx);
-                    netRoot.uploadSpeed = formatBytes(curTx - prevTx);
+                    let rxDelta = curRx - prevRx;
+                    let txDelta = curTx - prevTx;
+                    netRoot.downloadBytes = rxDelta;
+                    netRoot.uploadBytes = txDelta;
+                    netRoot.downloadSpeed = formatBytes(rxDelta);
+                    netRoot.uploadSpeed = formatBytes(txDelta);
+
+                    if (rxDelta > netRoot.maxObservedDown)
+                        netRoot.maxObservedDown = rxDelta;
+                    if (txDelta > netRoot.maxObservedUp)
+                        netRoot.maxObservedUp = txDelta;
                 }
 
                 prevRx = curRx;
@@ -97,33 +119,20 @@ Item {
         }
     }
 
-    Timer {
-        id: netTicker
-        interval: 3000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            netFetcher.running = false;
-            netFetcher.running = true;
-        }
-    }
-
     Component.onCompleted: {
         netFetcher.running = true;
     }
 
     Rectangle {
-        id: netHitbox
         anchors.fill: parent
         color: "transparent"
 
         Text {
             anchors.centerIn: parent
-            text: netRoot.connectionIcon
+            text: netRoot.isOnline ? "cloud_upload" : "cloud_off"
             font.family: "Material Symbols Outlined"
             font.pixelSize: 18
-            color: netRoot.activeIface === "None" ? "#f38ba8" : (iconMouseArea.containsMouse ? (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa") : (rootScope.theme ? rootScope.theme.theme_fg : "#cdd6f4"))
+            color: netRoot.isOnline ? (iconMouseArea.containsMouse ? netRoot.primaryColor : netRoot.fgColor) : netRoot.offlineColor
 
             Behavior on color {
                 ColorAnimation {
@@ -144,7 +153,7 @@ Item {
     PanelDrawer {
         id: drawerTemplate
         isOpen: false
-        drawerHeight: 192
+        drawerHeight: 220
         modalToken: "netmonitor"
         anchorTop: false
 
@@ -152,7 +161,7 @@ Item {
             if (isOpen) {
                 netRoot.menuOpen = true;
                 checkUserActivity();
-                mainContainerLayout.forceActiveFocus();
+                panelRoot.forceActiveFocus();
             } else {
                 netRoot.menuOpen = false;
             }
@@ -166,94 +175,219 @@ Item {
         }
 
         ColumnLayout {
-            id: mainContainerLayout
+            id: panelRoot
             anchors.fill: parent
-            anchors.margins: 16
             spacing: 0
             focus: true
 
-            RowLayout {
+            Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 28
-                spacing: 8
+                height: 44
+                color: netRoot.surfaceColor
 
-                Rectangle {
-                    width: 3
-                    height: 14
-                    radius: 0
-                    color: netRoot.activeIface === "None" ? "#f38ba8" : (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa")
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    spacing: 8
 
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 300
+                    Rectangle {
+                        width: 28
+                        height: 28
+                        radius: 0
+                        color: netRoot.isOnline ? Qt.rgba(netRoot.primaryColor.r, netRoot.primaryColor.g, netRoot.primaryColor.b, 0.12) : Qt.rgba(netRoot.offlineColor.r, netRoot.offlineColor.g, netRoot.offlineColor.b, 0.12)
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 300
+                            }
                         }
-                    }
-                }
 
-                Text {
-                    text: "Network"
-                    font.family: "Rubik"
-                    font.pixelSize: 14
-                    font.weight: Font.SemiBold
-                    color: rootScope.theme ? rootScope.theme.theme_fg : "#cdd6f4"
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Rectangle {
-                    width: statusDot.implicitWidth + statusLabel.implicitWidth + 14
-                    height: 18
-                    radius: 0
-                    color: netRoot.activeIface === "None" ? "#25f38ba8" : "#1ca6e3a1"
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 300
-                        }
-                    }
-
-                    RowLayout {
-                        anchors.centerIn: parent
-                        spacing: 5
-
-                        Rectangle {
-                            id: statusDot
-                            width: 5
-                            height: 5
-                            radius: 0
-                            color: netRoot.activeIface === "None" ? "#f38ba8" : "#a6e3a1"
+                        Text {
+                            anchors.centerIn: parent
+                            text: netRoot.isOnline ? "lan" : "cloud_off"
+                            font.family: "Material Symbols Outlined"
+                            font.pixelSize: 15
+                            color: netRoot.isOnline ? netRoot.primaryColor : netRoot.offlineColor
 
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 300
                                 }
                             }
+                        }
+                    }
 
-                            SequentialAnimation on opacity {
-                                running: netRoot.activeIface !== "None" && drawerTemplate.isOpen
-                                loops: Animation.Infinite
-                                NumberAnimation {
-                                    to: 0.3
-                                    duration: 800
-                                    easing.type: Easing.InOutSine
+                    // Title
+                    Text {
+                        text: "Network"
+                        font.family: "Rubik"
+                        font.pixelSize: 13
+                        font.weight: Font.SemiBold
+                        color: netRoot.fgColor
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    Rectangle {
+                        height: 20
+                        width: pillRow.implicitWidth + 16
+                        radius: 0
+                        color: netRoot.isOnline ? "#14a6e3a1" : "#14f38ba8"
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 300
+                            }
+                        }
+
+                        RowLayout {
+                            id: pillRow
+                            anchors.centerIn: parent
+                            spacing: 5
+
+                            Rectangle {
+                                width: 5
+                                height: 5
+                                radius: 2.5
+                                color: netRoot.isOnline ? netRoot.uploadColor : netRoot.offlineColor
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 300
+                                    }
                                 }
-                                NumberAnimation {
-                                    to: 1.0
-                                    duration: 800
-                                    easing.type: Easing.InOutSine
+
+                                SequentialAnimation on opacity {
+                                    running: netRoot.isOnline && drawerTemplate.isOpen
+                                    loops: Animation.Infinite
+                                    NumberAnimation {
+                                        to: 0.25
+                                        duration: 900
+                                        easing.type: Easing.InOutSine
+                                    }
+                                    NumberAnimation {
+                                        to: 1.0
+                                        duration: 900
+                                        easing.type: Easing.InOutSine
+                                    }
                                 }
+                            }
+
+                            Text {
+                                text: netRoot.isOnline ? "Online" : "Offline"
+                                font.family: "Rubik"
+                                font.pixelSize: 10
+                                font.weight: Font.Medium
+                                color: netRoot.isOnline ? netRoot.uploadColor : netRoot.offlineColor
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 300
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: netRoot.borderColor
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 0
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 64
+                    color: "transparent"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 16
+                        anchors.topMargin: 12
+                        anchors.bottomMargin: 12
+                        spacing: 4
+
+                        RowLayout {
+                            spacing: 4
+                            Text {
+                                text: "router"
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 11
+                                color: netRoot.dimText
+                            }
+                            Text {
+                                text: "Interface"
+                                font.family: "Rubik"
+                                font.pixelSize: 10
+                                color: netRoot.dimText
                             }
                         }
 
                         Text {
-                            id: statusLabel
-                            text: netRoot.activeIface === "None" ? "Offline" : "Online"
+                            text: netRoot.activeIface
                             font.family: "Rubik"
-                            font.pixelSize: 9
-                            font.weight: Font.Medium
-                            color: netRoot.activeIface === "None" ? "#f38ba8" : "#a6e3a1"
+                            font.pixelSize: 15
+                            font.weight: Font.SemiBold
+                            color: netRoot.isOnline ? netRoot.primaryColor : netRoot.offlineColor
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 300
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: 1
+                    height: 64
+                    color: netRoot.borderColor
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 64
+                    color: "transparent"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 16
+                        anchors.topMargin: 12
+                        anchors.bottomMargin: 12
+                        spacing: 4
+
+                        RowLayout {
+                            spacing: 4
+                            Text {
+                                text: "lan"
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 11
+                                color: netRoot.dimText
+                            }
+                            Text {
+                                text: "IP Address"
+                                font.family: "Rubik"
+                                font.pixelSize: 10
+                                color: netRoot.dimText
+                            }
+                        }
+
+                        Text {
+                            text: netRoot.ipAddress
+                            font.family: "Rubik"
+                            font.pixelSize: 13
+                            font.weight: Font.SemiBold
+                            color: netRoot.fgColor
 
                             Behavior on color {
                                 ColorAnimation {
@@ -268,238 +402,177 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 height: 1
-                color: "#18ffffff"
-                Layout.bottomMargin: 14
+                color: netRoot.borderColor
             }
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 10
+                spacing: 0
 
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 72
+                    height: 80
                     color: "transparent"
-                    border.color: "#14ffffff"
-                    border.width: 1
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: 12
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        anchors.topMargin: 12
+                        anchors.bottomMargin: 12
                         spacing: 4
 
                         RowLayout {
-                            spacing: 5
-                            Text {
-                                text: "router"
-                                font.family: "Material Symbols Outlined"
-                                font.pixelSize: 12
-                                color: "#44ffffff"
+                            spacing: 6
+
+                            Rectangle {
+                                width: 20
+                                height: 20
+                                radius: 0
+                                color: Qt.rgba(netRoot.primaryColor.r, netRoot.primaryColor.g, netRoot.primaryColor.b, 0.12)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "arrow_downward"
+                                    font.family: "Material Symbols Outlined"
+                                    font.pixelSize: 12
+                                    color: netRoot.primaryColor
+                                }
                             }
+
                             Text {
-                                text: "Interface"
+                                text: "Download"
                                 font.family: "Rubik"
                                 font.pixelSize: 10
-                                color: "#44ffffff"
+                                color: netRoot.mutedText
                             }
                         }
 
                         Text {
-                            text: netRoot.activeIface
+                            id: downloadSpeedLabel
+                            text: netRoot.downloadSpeed
                             font.family: "Rubik"
-                            font.pixelSize: 15
+                            font.pixelSize: 14
                             font.weight: Font.SemiBold
-                            color: netRoot.activeIface === "None" ? "#f38ba8" : (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa")
+                            color: "#eeffffff"
 
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 300
+                            Behavior on text {
+                                SequentialAnimation {
+                                    NumberAnimation {
+                                        target: downloadSpeedLabel
+                                        property: "opacity"
+                                        to: 0.4
+                                        duration: 120
+                                    }
+                                    NumberAnimation {
+                                        target: downloadSpeedLabel
+                                        property: "opacity"
+                                        to: 1.0
+                                        duration: 120
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 2
+                            color: netRoot.borderColor
+                            radius: 0
+
+                            Rectangle {
+                                width: netRoot.maxObservedDown > 0 ? Math.min(parent.width * (netRoot.downloadBytes / netRoot.maxObservedDown), parent.width) : 0
+                                height: parent.height
+                                color: netRoot.primaryColor
+                                opacity: 0.7
+                                radius: 0
+
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: 600
+                                        easing.type: Easing.OutCubic
+                                    }
                                 }
                             }
                         }
                     }
+                }
 
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: 2
-                        color: netRoot.activeIface === "None" ? "#f38ba8" : (rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa")
-                        opacity: 0.6
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 300
-                            }
-                        }
-                    }
+                Rectangle {
+                    width: 1
+                    height: 80
+                    color: netRoot.borderColor
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 72
+                    height: 80
                     color: "transparent"
-                    border.color: "#14ffffff"
-                    border.width: 1
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: 12
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        anchors.topMargin: 12
+                        anchors.bottomMargin: 12
                         spacing: 4
 
                         RowLayout {
-                            spacing: 5
-                            Text {
-                                text: "lan"
-                                font.family: "Material Symbols Outlined"
-                                font.pixelSize: 12
-                                color: "#44ffffff"
+                            spacing: 6
+
+                            Rectangle {
+                                width: 20
+                                height: 20
+                                radius: 0
+                                color: "#12a6e3a1"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "arrow_upward"
+                                    font.family: "Material Symbols Outlined"
+                                    font.pixelSize: 12
+                                    color: netRoot.uploadColor
+                                }
                             }
+
                             Text {
-                                text: "IP Address"
+                                text: "Upload"
                                 font.family: "Rubik"
                                 font.pixelSize: 10
-                                color: "#44ffffff"
+                                color: netRoot.mutedText
                             }
                         }
 
                         Text {
-                            text: netRoot.ipAddress
+                            id: uploadSpeedLabel
+                            text: netRoot.uploadSpeed
                             font.family: "Rubik"
-                            font.pixelSize: 13
+                            font.pixelSize: 14
                             font.weight: Font.SemiBold
-                            color: "#ccffffff"
+                            color: "#eeffffff"
                         }
-                    }
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: 2
-                        color: "#40ffffff"
-                        opacity: 0.6
-                    }
-                }
-            }
-
-            Item {
-                height: 10
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 10
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 60
-                    color: "transparent"
-                    border.color: "#14ffffff"
-                    border.width: 1
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        spacing: 10
 
                         Rectangle {
-                            width: 30
-                            height: 30
+                            Layout.fillWidth: true
+                            height: 2
+                            color: netRoot.borderColor
                             radius: 0
-                            color: "#1589b4fa"
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: "arrow_downward"
-                                font.family: "Material Symbols Outlined"
-                                font.pixelSize: 15
-                                color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
+                            Rectangle {
+                                width: netRoot.maxObservedUp > 0 ? Math.min(parent.width * (netRoot.uploadBytes / netRoot.maxObservedUp), parent.width) : 0
+                                height: parent.height
+                                color: netRoot.uploadColor
+                                opacity: 0.7
+                                radius: 0
+
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: 600
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
                             }
                         }
-
-                        ColumnLayout {
-                            spacing: 2
-                            Text {
-                                text: "Download"
-                                font.family: "Rubik"
-                                font.pixelSize: 9
-                                color: "#44ffffff"
-                            }
-                            Text {
-                                text: netRoot.downloadSpeed
-                                font.family: "Rubik"
-                                font.pixelSize: 13
-                                font.weight: Font.SemiBold
-                                color: "#ddffffff"
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: 2
-                        color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
-                        opacity: 0.5
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 60
-                    color: "transparent"
-                    border.color: "#14ffffff"
-                    border.width: 1
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        spacing: 10
-
-                        Rectangle {
-                            width: 30
-                            height: 30
-                            radius: 0
-                            color: "#18a6e3a1"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "arrow_upward"
-                                font.family: "Material Symbols Outlined"
-                                font.pixelSize: 15
-                                color: "#a6e3a1"
-                            }
-                        }
-
-                        ColumnLayout {
-                            spacing: 2
-                            Text {
-                                text: "Upload"
-                                font.family: "Rubik"
-                                font.pixelSize: 9
-                                color: "#44ffffff"
-                            }
-                            Text {
-                                text: netRoot.uploadSpeed
-                                font.family: "Rubik"
-                                font.pixelSize: 13
-                                font.weight: Font.SemiBold
-                                color: "#ddffffff"
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: 2
-                        color: "#a6e3a1"
-                        opacity: 0.5
                     }
                 }
             }

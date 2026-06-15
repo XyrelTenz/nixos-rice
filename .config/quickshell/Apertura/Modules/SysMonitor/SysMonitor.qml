@@ -8,7 +8,6 @@ import "../.."
 
 Item {
     id: monitorRoot
-
     implicitWidth: 32
     implicitHeight: 32
 
@@ -19,23 +18,24 @@ Item {
     property real ramUsed: 0.0
     property real ramTotal: 0.0
     property int ramPercent: 0
-
     property string diskUsed: "0"
     property string diskTotal: "0"
     property int diskPercent: 0
-
     property bool hasGpu: false
     property int gpuPercent: 0
     property int gpuTemp: 0
 
     property var theme: rootScope.theme
 
+    property color primaryColor: theme ? theme.theme_primary : "#89b4fa"
+    property color fgColor: theme ? theme.theme_fg : "#cdd6f4"
+
     function accentForPercent(pct) {
         if (pct >= 90)
             return "#f38ba8";
         if (pct >= 70)
             return "#f9e2af";
-        return theme ? theme.theme_primary : "#89b4fa";
+        return monitorRoot.primaryColor;
     }
 
     Timer {
@@ -98,9 +98,8 @@ Item {
                 if (prevTotal !== 0) {
                     let diffTotal = curTotal - prevTotal;
                     let diffIdle = curIdle - prevIdle;
-                    if (diffTotal > 0) {
+                    if (diffTotal > 0)
                         monitorRoot.cpuPercent = Math.round(((diffTotal - diffIdle) / diffTotal) * 100);
-                    }
                 }
                 prevTotal = curTotal;
                 prevIdle = curIdle;
@@ -108,11 +107,9 @@ Item {
                 monitorRoot.cpuTemp = parseInt(parts[2]);
                 let availMem = parseFloat(parts[3]);
                 let totalMem = parseFloat(parts[4]);
-
                 monitorRoot.ramTotal = totalMem / 1024 / 1024;
                 monitorRoot.ramUsed = (totalMem - availMem) / 1024 / 1024;
                 monitorRoot.ramPercent = Math.round(((totalMem - availMem) / totalMem) * 100);
-
                 monitorRoot.diskUsed = parts[5];
                 monitorRoot.diskTotal = parts[6];
                 monitorRoot.diskPercent = parseInt(parts[7].replace("%", ""));
@@ -154,12 +151,11 @@ Item {
                     let pCpuRaw = parseFloat(line.substring(lastSpace + 1).trim());
                     if (pName === "ps" || pName === "sh" || pName === "awk" || pName === "quickshell")
                         continue;
-                    if (pName && !isNaN(pCpuRaw)) {
+                    if (pName && !isNaN(pCpuRaw))
                         processListModel.append({
                             "name": pName,
                             "cpu": pCpuRaw.toFixed(1)
                         });
-                    }
                 }
             }
         }
@@ -180,7 +176,6 @@ Item {
     }
 
     Rectangle {
-        id: sysMonitorHitbox
         anchors.fill: parent
         color: "transparent"
 
@@ -189,7 +184,7 @@ Item {
             text: "cardiology"
             font.family: "Material Symbols Outlined"
             font.pixelSize: 18
-            color: iconMouseArea.containsMouse ? (monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa") : (monitorRoot.theme ? monitorRoot.theme.theme_fg : "#cdd6f4")
+            color: iconMouseArea.containsMouse ? monitorRoot.primaryColor : monitorRoot.fgColor
 
             Behavior on color {
                 ColorAnimation {
@@ -210,7 +205,7 @@ Item {
     PanelDrawer {
         id: drawerTemplate
         isOpen: false
-        drawerHeight: monitorRoot.hasGpu ? 390 : 342
+        drawerHeight: monitorRoot.hasGpu ? 410 : 360
         modalToken: "sysmonitor"
         anchorTop: false
 
@@ -218,7 +213,7 @@ Item {
             if (isOpen) {
                 monitorRoot.menuOpen = true;
                 checkUserActivity();
-                mainContainerLayout.forceActiveFocus();
+                panelLayout.forceActiveFocus();
             } else {
                 monitorRoot.menuOpen = false;
             }
@@ -232,7 +227,6 @@ Item {
         }
 
         MouseArea {
-            id: preventDismiss
             anchors.fill: parent
             onPressed: mouse => {
                 mouse.accepted = true;
@@ -241,77 +235,98 @@ Item {
         }
 
         ColumnLayout {
-            id: mainContainerLayout
+            id: panelLayout
             anchors.fill: parent
-            anchors.margins: 16
             spacing: 0
             focus: true
 
-            RowLayout {
+            Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
-                spacing: 8
+                height: 44
+                color: "#0dffffff"
 
-                Rectangle {
-                    width: 3
-                    height: 16
-                    radius: 2
-                    color: monitorRoot.theme ? monitorRoot.theme.theme_primary : "#89b4fa"
-                }
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    spacing: 8
 
-                Text {
-                    text: "System"
-                    font.family: "Rubik"
-                    font.pixelSize: 14
-                    font.weight: Font.SemiBold
-                    color: monitorRoot.theme ? monitorRoot.theme.theme_fg : "#cdd6f4"
-                }
+                    Rectangle {
+                        width: 26
+                        height: 26
+                        radius: 0
+                        color: Qt.rgba(monitorRoot.primaryColor.r, monitorRoot.primaryColor.g, monitorRoot.primaryColor.b, 0.12)
 
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Rectangle {
-                    width: 6
-                    height: 6
-                    radius: 3
-                    color: "#a6e3a1"
-
-                    SequentialAnimation on opacity {
-                        running: drawerTemplate.isOpen
-                        loops: Animation.Infinite
-                        NumberAnimation {
-                            to: 0.3
-                            duration: 900
-                            easing.type: Easing.InOutSine
-                        }
-                        NumberAnimation {
-                            to: 1.0
-                            duration: 900
-                            easing.type: Easing.InOutSine
+                        Text {
+                            anchors.centerIn: parent
+                            text: "cardiology"
+                            font.family: "Material Symbols Outlined"
+                            font.pixelSize: 14
+                            color: monitorRoot.primaryColor
                         }
                     }
-                }
 
-                Text {
-                    text: "Live"
-                    font.family: "Rubik"
-                    font.pixelSize: 9
-                    font.weight: Font.Medium
-                    color: "#66ffffff"
+                    Text {
+                        text: "System"
+                        font.family: "Rubik"
+                        font.pixelSize: 13
+                        font.weight: Font.SemiBold
+                        color: monitorRoot.fgColor
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    RowLayout {
+                        spacing: 5
+
+                        Rectangle {
+                            width: 6
+                            height: 6
+                            radius: 3
+                            color: "#a6e3a1"
+
+                            SequentialAnimation on opacity {
+                                running: drawerTemplate.isOpen
+                                loops: Animation.Infinite
+                                NumberAnimation {
+                                    to: 0.2
+                                    duration: 900
+                                    easing.type: Easing.InOutSine
+                                }
+                                NumberAnimation {
+                                    to: 1.0
+                                    duration: 900
+                                    easing.type: Easing.InOutSine
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: "Live"
+                            font.family: "Rubik"
+                            font.pixelSize: 10
+                            font.weight: Font.Medium
+                            color: "#50ffffff"
+                        }
+                    }
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1
+                height: 1
                 color: "#18ffffff"
-                Layout.bottomMargin: 12
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 10
+                Layout.topMargin: 12
+                Layout.bottomMargin: 4
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                spacing: 12
 
                 Repeater {
                     model: [
@@ -319,39 +334,39 @@ Item {
                             label: "CPU",
                             icon: "memory",
                             pct: monitorRoot.cpuPercent,
-                            detail: monitorRoot.cpuTemp + "°  ·  " + monitorRoot.cpuPercent + "%",
-                            visible: true,
-                            barWidth: monitorRoot.cpuPercent / 100.0
+                            detail: monitorRoot.cpuTemp + "°C",
+                            sub: monitorRoot.cpuPercent + "%",
+                            visible: true
                         },
                         {
                             label: "GPU",
                             icon: "display_settings",
                             pct: monitorRoot.gpuPercent,
-                            detail: monitorRoot.gpuTemp + "°  ·  " + monitorRoot.gpuPercent + "%",
-                            visible: monitorRoot.hasGpu,
-                            barWidth: monitorRoot.gpuPercent / 100.0
+                            detail: monitorRoot.gpuTemp + "°C",
+                            sub: monitorRoot.gpuPercent + "%",
+                            visible: monitorRoot.hasGpu
                         },
                         {
                             label: "RAM",
                             icon: "storage",
                             pct: monitorRoot.ramPercent,
-                            detail: monitorRoot.ramUsed.toFixed(1) + " / " + monitorRoot.ramTotal.toFixed(1) + " GB",
-                            visible: true,
-                            barWidth: monitorRoot.ramPercent / 100.0
+                            detail: monitorRoot.ramUsed.toFixed(1) + " GB",
+                            sub: monitorRoot.ramTotal.toFixed(1) + " GB total",
+                            visible: true
                         },
                         {
                             label: "Disk",
                             icon: "hard_drive",
                             pct: monitorRoot.diskPercent,
-                            detail: monitorRoot.diskUsed + " / " + monitorRoot.diskTotal + " GB",
-                            visible: true,
-                            barWidth: monitorRoot.diskPercent / 100.0
+                            detail: monitorRoot.diskUsed + " GB",
+                            sub: monitorRoot.diskTotal + " GB total",
+                            visible: true
                         }
                     ]
 
                     delegate: ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 5
+                        spacing: 6
                         visible: modelData.visible
                         Layout.preferredHeight: modelData.visible ? -1 : 0
 
@@ -359,11 +374,31 @@ Item {
                             Layout.fillWidth: true
                             spacing: 6
 
-                            Text {
-                                text: modelData.icon
-                                font.family: "Material Symbols Outlined"
-                                font.pixelSize: 13
-                                color: monitorRoot.accentForPercent(modelData.pct)
+                            Rectangle {
+                                width: 22
+                                height: 22
+                                radius: 0
+                                color: Qt.rgba(Qt.color(monitorRoot.accentForPercent(modelData.pct)).r, Qt.color(monitorRoot.accentForPercent(modelData.pct)).g, Qt.color(monitorRoot.accentForPercent(modelData.pct)).b, 0.12)
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 400
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.icon
+                                    font.family: "Material Symbols Outlined"
+                                    font.pixelSize: 12
+                                    color: monitorRoot.accentForPercent(modelData.pct)
+
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 400
+                                        }
+                                    }
+                                }
                             }
 
                             Text {
@@ -381,35 +416,54 @@ Item {
                             Text {
                                 text: modelData.detail
                                 font.family: "Rubik"
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                                 font.weight: Font.SemiBold
                                 color: monitorRoot.accentForPercent(modelData.pct)
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 400
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: 3
+                                height: 3
+                                radius: 1.5
+                                color: "#30ffffff"
+                            }
+
+                            Text {
+                                text: modelData.sub
+                                font.family: "Rubik"
+                                font.pixelSize: 10
+                                color: "#45ffffff"
                             }
                         }
 
                         Item {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 5
+                            height: 4
 
                             Rectangle {
                                 anchors.fill: parent
-                                color: "#14ffffff"
-                                radius: 3
+                                color: "#12ffffff"
+                                radius: 0
                             }
 
                             Rectangle {
                                 height: parent.height
-                                width: parent.width * modelData.barWidth
+                                width: Math.max(0, parent.width * (modelData.pct / 100.0))
                                 color: monitorRoot.accentForPercent(modelData.pct)
-                                radius: 3
+                                radius: 0
 
                                 Behavior on width {
                                     NumberAnimation {
-                                        duration: 300
+                                        duration: 350
                                         easing.type: Easing.OutCubic
                                     }
                                 }
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 400
@@ -420,11 +474,22 @@ Item {
                                     anchors.right: parent.right
                                     anchors.top: parent.top
                                     anchors.bottom: parent.bottom
-                                    width: Math.min(parent.width, 20)
-                                    radius: 3
-                                    color: "#30ffffff"
-                                    visible: modelData.barWidth > 0.02
+                                    width: Math.min(parent.width, 16)
+                                    radius: 0
+                                    color: "#25ffffff"
+                                    visible: modelData.pct > 2
                                 }
+                            }
+
+                            Text {
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.rightMargin: 0
+                                text: modelData.pct + "%"
+                                font.family: "Rubik"
+                                font.pixelSize: 9
+                                color: "#25ffffff"
+                                visible: false // set true for inline pct labels
                             }
                         }
                     }
@@ -433,62 +498,70 @@ Item {
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1
+                height: 1
                 color: "#18ffffff"
-                Layout.topMargin: 12
-                Layout.bottomMargin: 10
+                Layout.topMargin: 8
             }
 
-            RowLayout {
+            Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 22
-                spacing: 6
+                height: 34
+                color: "#0dffffff"
 
-                Text {
-                    text: "top_apps"
-                    font.family: "Material Symbols Outlined"
-                    font.pixelSize: 13
-                    color: "#55ffffff"
-                }
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    spacing: 6
 
-                Text {
-                    text: "Processes"
-                    font.family: "Rubik"
-                    font.pixelSize: 11
-                    font.weight: Font.SemiBold
-                    color: "#99ffffff"
-                }
+                    Text {
+                        text: "Processes"
+                        font.family: "Rubik"
+                        font.pixelSize: 11
+                        font.weight: Font.SemiBold
+                        color: "#80ffffff"
+                    }
 
-                Item {
-                    Layout.fillWidth: true
-                }
+                    Item {
+                        Layout.fillWidth: true
+                    }
 
-                Text {
-                    text: "by cpu"
-                    font.family: "Rubik"
-                    font.pixelSize: 9
-                    color: "#33ffffff"
+                    Text {
+                        text: "by cpu"
+                        font.family: "Rubik"
+                        font.pixelSize: 9
+                        color: "#30ffffff"
+                    }
                 }
             }
 
+            // Divider
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: "#18ffffff"
+            }
+
+            // ── Process list ──────────────────────────────────────────────────
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.topMargin: 4
 
                 ListView {
                     id: processListView
                     anchors.fill: parent
+                    anchors.topMargin: 4
+                    anchors.bottomMargin: 4
                     model: processListModel
-                    spacing: 3
+                    spacing: 0
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
 
                     delegate: Rectangle {
                         width: processListView.width
-                        height: 28
-                        color: procMouse.containsMouse ? "#0effffff" : "transparent"
-                        radius: 6
+                        height: 30
+                        color: procMouse.containsMouse ? "#0dffffff" : "transparent"
+                        radius: 0
 
                         Behavior on color {
                             ColorAnimation {
@@ -498,18 +571,20 @@ Item {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
+                            anchors.leftMargin: 16
+                            anchors.rightMargin: 16
                             spacing: 0
 
+                            // Rank
                             Text {
-                                text: (index + 1) + "."
+                                text: (index + 1)
                                 font.family: "Rubik"
                                 font.pixelSize: 10
-                                color: "#33ffffff"
-                                Layout.preferredWidth: 18
+                                color: "#28ffffff"
+                                Layout.preferredWidth: 16
                             }
 
+                            // Process name
                             Text {
                                 text: model.name
                                 font.family: "Rubik"
@@ -519,18 +594,63 @@ Item {
                                 Layout.fillWidth: true
                             }
 
+                            // Mini bar
+                            Item {
+                                Layout.preferredWidth: 48
+                                height: 3
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: "#10ffffff"
+                                    radius: 0
+                                }
+
+                                Rectangle {
+                                    height: parent.height
+                                    width: Math.min(parent.width, parent.width * (parseFloat(model.cpu) / 30.0))
+                                    radius: 0
+                                    color: parseFloat(model.cpu) >= 15 ? "#f38ba8" : parseFloat(model.cpu) >= 5 ? "#f9e2af" : "#55" + (monitorRoot.primaryColor.toString().slice(1))
+
+                                    Behavior on width {
+                                        NumberAnimation {
+                                            duration: 300
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 200
+                                        }
+                                    }
+                                }
+                            }
+
+                            // CPU %
                             Text {
                                 text: model.cpu + "%"
                                 font.family: "Rubik"
                                 font.pixelSize: 10
                                 font.weight: Font.SemiBold
                                 color: parseFloat(model.cpu) >= 15 ? "#f38ba8" : parseFloat(model.cpu) >= 5 ? "#f9e2af" : "#55ffffff"
+                                Layout.preferredWidth: 38
+                                horizontalAlignment: Text.AlignRight
+
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
                                     }
                                 }
                             }
+                        }
+
+                        // Bottom rule
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 1
+                            color: "#08ffffff"
+                            visible: index < processListView.count - 1
                         }
 
                         MouseArea {

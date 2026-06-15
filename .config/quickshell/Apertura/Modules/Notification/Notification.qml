@@ -13,9 +13,14 @@ Item {
 
     property int unreadCount: 0
     property var visibleBanners: []
-    property var activeHistoryReferences: [] 
+    property var activeHistoryReferences: []
     property bool menuOpen: false
     property bool notificationsEnabled: true
+
+    property color primaryColor: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
+    property color fgColor: rootScope.theme ? rootScope.theme.theme_fg : "#cdd6f4"
+    property color outlineColor: rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff"
+    property color onPrimary: rootScope.theme ? rootScope.theme.theme_onPrimary : "#11111b"
 
     Timer {
         id: osdAutohideTimer
@@ -35,9 +40,9 @@ Item {
 
     function checkUserActivity() {
         if (notificationMouseArea.containsMouse || cardHoverTracker.containsMouse) {
-            osdAutohideTimer.stop(); 
+            osdAutohideTimer.stop();
         } else if (drawerTemplate.isOpen) {
-            osdAutohideTimer.restart(); 
+            osdAutohideTimer.restart();
         }
     }
 
@@ -57,12 +62,12 @@ Item {
         actionsSupported: true
         keepOnReload: true
 
-        onNotification: (notification) => {
+        onNotification: notification => {
             if (!notificationRoot.notificationsEnabled) {
                 notification.dismiss();
                 return;
             }
-            
+
             notification.tracked = true;
             notificationRoot.updateCount();
             notificationRoot.activeHistoryReferences = [...notificationRoot.activeHistoryReferences, notification];
@@ -72,7 +77,7 @@ Item {
             toastTimer.triggered.connect(() => {
                 let idx = notificationRoot.visibleBanners.indexOf(notification);
                 if (idx !== -1 && toastRepeater.itemAt(idx) && toastRepeater.itemAt(idx).isHovered) {
-                    return; 
+                    return;
                 }
                 notificationRoot.visibleBanners = notificationRoot.visibleBanners.filter(item => item !== notification);
                 toastTimer.destroy();
@@ -96,33 +101,37 @@ Item {
         }
     }
 
+    // ── Tray icon ─────────────────────────────────────────────────────────────
     Rectangle {
-        id: notificationHitbox
         anchors.fill: parent
         color: "transparent"
         radius: 0
 
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 0
+        Text {
+            anchors.centerIn: parent
+            text: !notificationRoot.notificationsEnabled ? "notifications_off" : (notificationRoot.unreadCount > 0 ? "notifications_unread" : "notifications")
+            font.family: "Material Symbols Outlined"
+            font.pixelSize: 20
+            color: notificationRoot.notificationsEnabled ? (notificationMouseArea.containsMouse ? notificationRoot.primaryColor : notificationRoot.fgColor) : notificationRoot.outlineColor
 
-            Text {
-                id: notificationIcon
-                Layout.alignment: Qt.AlignHCenter
-                text: !notificationRoot.notificationsEnabled ? "notifications_off" : (notificationRoot.unreadCount > 0 ? "notifications_unread" : "notifications")
-                font.family: "Material Symbols Outlined"
-                font.pixelSize: 20
-                color: notificationRoot.notificationsEnabled ? (rootScope.theme ? rootScope.theme.theme_fg : "#ffffff") : (rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff")
+            Behavior on color {
+                ColorAnimation {
+                    duration: 200
+                }
             }
         }
 
         Rectangle {
-            id: notifHoverOverlay
             anchors.fill: parent
             radius: 0
-            color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
-            opacity: notificationMouseArea.containsMouse ? 0.3 : 0.0
-            z: 1
+            color: notificationRoot.primaryColor
+            opacity: notificationMouseArea.containsMouse ? 0.08 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
+                }
+            }
         }
 
         MouseArea {
@@ -132,14 +141,22 @@ Item {
             cursorShape: Qt.PointingHandCursor
             onClicked: toggleMenu()
             onContainsMouseChanged: checkUserActivity()
-            
             onDoubleClicked: {
-                if (!notificationRoot.notificationsEnabled) return;
-                try { nativeServer.clear(); } catch(e) {}
-                try { nativeServer.dismissAll(); } catch(e) {}
+                if (!notificationRoot.notificationsEnabled)
+                    return;
+                try {
+                    nativeServer.clear();
+                } catch (e) {}
+                try {
+                    nativeServer.dismissAll();
+                } catch (e) {}
                 for (let i = 0; i < notificationRoot.activeHistoryReferences.length; i++) {
-                    try { notificationRoot.activeHistoryReferences[i].dismiss(); } catch(e) {}
-                    try { nativeServer.dismiss(notificationRoot.activeHistoryReferences[i].id); } catch(e) {}
+                    try {
+                        notificationRoot.activeHistoryReferences[i].dismiss();
+                    } catch (e) {}
+                    try {
+                        nativeServer.dismiss(notificationRoot.activeHistoryReferences[i].id);
+                    } catch (e) {}
                 }
                 notificationRoot.visibleBanners = [];
                 notificationRoot.activeHistoryReferences = [];
@@ -158,7 +175,6 @@ Item {
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "quickshell-overlay"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-
         mask: toastInputBounds
 
         Region {
@@ -168,34 +184,46 @@ Item {
 
         ColumnLayout {
             id: toastColumn
-            width: Config.drawerTargetWidth 
+            width: Config.drawerTargetWidth
             y: 12
-            spacing: 0
+            spacing: 6
 
             states: [
                 State {
                     name: "visible"
                     when: notificationRoot.visibleBanners.length > 0
-                    PropertyChanges { target: toastColumn; x: popupToastWindow.width - toastColumn.width - 12 }
+                    PropertyChanges {
+                        target: toastColumn
+                        x: popupToastWindow.width - toastColumn.width - 12
+                    }
                 },
                 State {
                     name: "hidden"
                     when: notificationRoot.visibleBanners.length === 0
-                    PropertyChanges { target: toastColumn; x: popupToastWindow.width }
+                    PropertyChanges {
+                        target: toastColumn
+                        x: popupToastWindow.width
+                    }
                 }
             ]
 
             transitions: [
                 Transition {
-                    from: "hidden"; to: "visible"
-                    ParallelAnimation {
-                        NumberAnimation { property: "x"; duration: Config.entryDuration; easing.type: Config.entryEasing }
+                    from: "hidden"
+                    to: "visible"
+                    NumberAnimation {
+                        property: "x"
+                        duration: Config.entryDuration
+                        easing.type: Config.entryEasing
                     }
                 },
                 Transition {
-                    from: "visible"; to: "hidden"
-                    ParallelAnimation {
-                        NumberAnimation { property: "x"; duration: Config.exitDuration; easing.type: Config.exitEasing }
+                    from: "visible"
+                    to: "hidden"
+                    NumberAnimation {
+                        property: "x"
+                        duration: Config.exitDuration
+                        easing.type: Config.exitEasing
                     }
                 }
             ]
@@ -203,70 +231,102 @@ Item {
             Repeater {
                 id: toastRepeater
                 model: notificationRoot.visibleBanners
+
                 delegate: Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: Math.max(80, appHeaderRow.height + tSummary.implicitHeight + tBody.implicitHeight + 36)
-                    color: "#ee11111b" 
-                    border.color: rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff"
+                    implicitHeight: toastContent.implicitHeight + 24
+                    color: "#ee11111b"
+                    border.color: "#20ffffff"
                     border.width: 1
                     radius: 0
 
                     property bool isHovered: toastMouseArea.containsMouse
 
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: 2
+                        color: notificationRoot.primaryColor
+                        opacity: 0.8
+                    }
+
                     ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 12
-                        spacing: 0
+                        id: toastContent
+                        anchors {
+                            left: parent.left
+                            leftMargin: 14
+                            right: parent.right
+                            rightMargin: 12
+                            top: parent.top
+                            topMargin: 12
+                        }
+                        spacing: 5
 
                         RowLayout {
-                            id: appHeaderRow
                             Layout.fillWidth: true
-                            
+                            spacing: 6
+
+                            Rectangle {
+                                width: 16
+                                height: 16
+                                radius: 0
+                                color: Qt.rgba(notificationRoot.primaryColor.r, notificationRoot.primaryColor.g, notificationRoot.primaryColor.b, 0.15)
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "notifications"
+                                    font.family: "Material Symbols Outlined"
+                                    font.pixelSize: 10
+                                    color: notificationRoot.primaryColor
+                                }
+                            }
+
                             Text {
                                 text: (modelData.appName || "Notification").toUpperCase()
                                 font.family: "Rubik"
                                 font.pixelSize: 9
-                                font.bold: true
-                                color: rootScope.theme ? rootScope.theme.theme_primary : "#89b4fa"
+                                font.weight: Font.Bold
+                                color: notificationRoot.primaryColor
                                 Layout.fillWidth: true
+                                elide: Text.ElideRight
                             }
 
                             Text {
                                 text: "close"
                                 font.family: "Material Symbols Outlined"
-                                font.pixelSize: 13
-                                color: rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff"
+                                font.pixelSize: 12
+                                color: "#40ffffff"
                             }
                         }
 
                         Rectangle {
                             Layout.fillWidth: true
                             height: 1
-                            color: rootScope.theme ? rootScope.theme.theme_outline : "#1affffff"
-                            opacity: 0.5
+                            color: "#10ffffff"
                         }
 
                         Text {
-                            id: tSummary
                             text: modelData.summary
                             font.family: "Rubik"
                             font.pixelSize: 13
-                            font.bold: true
-                            color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff"
+                            font.weight: Font.SemiBold
+                            color: "#f0ffffff"
                             Layout.fillWidth: true
                             elide: Text.ElideRight
                         }
 
                         Text {
-                            id: tBody
                             text: modelData.body
                             font.family: "Rubik"
-                            font.pixelSize: 12
-                            color: rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff"
+                            font.pixelSize: 11
+                            color: "#80ffffff"
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
                             maximumLineCount: 3
                             elide: Text.ElideRight
+                            visible: modelData.body !== ""
+                            Layout.bottomMargin: 2
                         }
                     }
 
@@ -289,14 +349,13 @@ Item {
         isOpen: false
         modalToken: "notifications"
         anchorTop: false
-
-        drawerHeight: Math.min(mainContainerLayout.implicitHeight + 28, 375)
+        drawerHeight: Math.min(panelLayout.implicitHeight + 28, 375)
 
         onIsOpenChanged: {
             if (isOpen) {
                 notificationRoot.menuOpen = true;
                 checkUserActivity();
-                mainContainerLayout.forceActiveFocus();
+                panelLayout.forceActiveFocus();
             } else {
                 notificationRoot.menuOpen = false;
             }
@@ -311,57 +370,117 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onPressed: (mouse) => { mouse.accepted = true; checkUserActivity(); }
+            onPressed: mouse => {
+                mouse.accepted = true;
+                checkUserActivity();
+            }
         }
 
         ColumnLayout {
-            id: mainContainerLayout
+            id: panelLayout
             anchors.fill: parent
-            anchors.margins: 14
-            spacing: 10
+            spacing: 0
             focus: true
 
-            RowLayout {
-                id: headerLayout
+            Rectangle {
                 Layout.fillWidth: true
-                Text { text: "Notifications"; font.family: "Rubik"; font.pixelSize: 16; font.weight: Font.Bold; color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff" } 
-                Item { Layout.fillWidth: true }
+                height: 44
+                color: "#0dffffff"
 
                 RowLayout {
-                    spacing: 12
-                    Layout.alignment: Qt.AlignRight
+                    anchors.fill: parent
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    spacing: 8
 
-                    Item {
-                        width: clearAllText.implicitWidth
-                        height: 24
-                        visible: notificationRoot.unreadCount > 0 && notificationRoot.notificationsEnabled
-                        z: 100
+                    Rectangle {
+                        width: 26
+                        height: 26
+                        radius: 0
+                        color: Qt.rgba(notificationRoot.primaryColor.r, notificationRoot.primaryColor.g, notificationRoot.primaryColor.b, 0.12)
 
                         Text {
-                            id: clearAllText
                             anchors.centerIn: parent
-                            text: "Clear All"
-                            font.family: "Rubik"; font.pixelSize: 12; font.weight: Font.Bold
-                            color: clearAllMouse.containsMouse ? (rootScope.theme ? rootScope.theme.theme_primary : "#ffffff") : (rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff")
+                            text: "notifications"
+                            font.family: "Material Symbols Outlined"
+                            font.pixelSize: 14
+                            color: notificationRoot.primaryColor
+                        }
+                    }
+
+                    Text {
+                        text: "Notifications"
+                        font.family: "Rubik"
+                        font.pixelSize: 13
+                        font.weight: Font.SemiBold
+                        color: notificationRoot.fgColor
+                    }
+
+                    Rectangle {
+                        visible: notificationRoot.unreadCount > 0 && notificationRoot.notificationsEnabled
+                        width: Math.max(18, countBadge.implicitWidth + 8)
+                        height: 16
+                        radius: 0
+                        color: Qt.rgba(notificationRoot.primaryColor.r, notificationRoot.primaryColor.g, notificationRoot.primaryColor.b, 0.18)
+
+                        Text {
+                            id: countBadge
+                            anchors.centerIn: parent
+                            text: notificationRoot.unreadCount
+                            font.family: "Rubik"
+                            font.pixelSize: 9
+                            font.weight: Font.Bold
+                            color: notificationRoot.primaryColor
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    Item {
+                        width: clearText.implicitWidth
+                        height: 24
+                        visible: notificationRoot.unreadCount > 0 && notificationRoot.notificationsEnabled
+
+                        Text {
+                            id: clearText
+                            anchors.centerIn: parent
+                            text: "Clear all"
+                            font.family: "Rubik"
+                            font.pixelSize: 11
+                            color: clearMouse.containsMouse ? notificationRoot.primaryColor : "#50ffffff"
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
                         }
 
                         MouseArea {
-                            id: clearAllMouse
+                            id: clearMouse
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                try { nativeServer.clear(); } catch(e) {}
-                                try { nativeServer.dismissAll(); } catch(e) {}
-                                
+                                try {
+                                    nativeServer.clear();
+                                } catch (e) {}
+                                try {
+                                    nativeServer.dismissAll();
+                                } catch (e) {}
                                 for (let i = 0; i < notificationRoot.activeHistoryReferences.length; i++) {
                                     let item = notificationRoot.activeHistoryReferences[i];
                                     if (item) {
-                                        try { item.dismiss(); } catch(e) {}
-                                        try { nativeServer.dismiss(item.id); } catch(e) {}
+                                        try {
+                                            item.dismiss();
+                                        } catch (e) {}
+                                        try {
+                                            nativeServer.dismiss(item.id);
+                                        } catch (e) {}
                                     }
                                 }
-                                
                                 notificationRoot.visibleBanners = [];
                                 notificationRoot.activeHistoryReferences = [];
                                 notificationRoot.updateCount();
@@ -371,107 +490,269 @@ Item {
                     }
 
                     Rectangle {
-                        width: 50; height: 24; radius: 12
-                        color: notificationRoot.notificationsEnabled ? (rootScope.theme ? rootScope.theme.theme_outline : "#45ffffff") : (rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff")
-                        z: 100
-                        
-                        Rectangle {
-                            width: 18; height: 18; radius: 9; color: rootScope.theme ? rootScope.theme.theme_onPrimary : "#11111b"
-                            anchors.verticalCenter: parent.verticalCenter
-                            x: notificationRoot.notificationsEnabled ? 28 : 4
-                            
-                            Behavior on x { 
-                                NumberAnimation { duration: 120; easing.type: Easing.OutQuad } 
+                        width: 1
+                        height: 14
+                        color: "#20ffffff"
+                        visible: notificationRoot.unreadCount > 0 && notificationRoot.notificationsEnabled
+                    }
+
+                    RowLayout {
+                        spacing: 6
+
+                        Text {
+                            text: notificationRoot.notificationsEnabled ? "do_not_disturb_off" : "do_not_disturb_on"
+                            font.family: "Material Symbols Outlined"
+                            font.pixelSize: 13
+                            color: notificationRoot.notificationsEnabled ? "#40ffffff" : "#f38ba8"
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 200
+                                }
                             }
                         }
-                        
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                notificationRoot.notificationsEnabled = !notificationRoot.notificationsEnabled;
-                                notificationRoot.updateCount();
-                                checkUserActivity();
+
+                        Rectangle {
+                            width: 36
+                            height: 20
+                            radius: 0
+                            color: notificationRoot.notificationsEnabled ? Qt.rgba(notificationRoot.primaryColor.r, notificationRoot.primaryColor.g, notificationRoot.primaryColor.b, 0.25) : "#20ffffff"
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 200
+                                }
+                            }
+
+                            Rectangle {
+                                width: 14
+                                height: 14
+                                radius: 0
+                                color: notificationRoot.notificationsEnabled ? notificationRoot.primaryColor : "#60ffffff"
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: notificationRoot.notificationsEnabled ? 19 : 3
+
+                                Behavior on x {
+                                    NumberAnimation {
+                                        duration: 150
+                                        easing.type: Easing.OutQuad
+                                    }
+                                }
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 200
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    notificationRoot.notificationsEnabled = !notificationRoot.notificationsEnabled;
+                                    notificationRoot.updateCount();
+                                    checkUserActivity();
+                                }
                             }
                         }
                     }
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff" }
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: "#18ffffff"
+            }
 
             ListView {
                 id: notifListView
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.preferredHeight: count === 0 ? 40 : Math.min(contentHeight, 280)
+                Layout.preferredHeight: count === 0 ? 56 : Math.min(contentHeight + 16, 300)
                 clip: true
-                spacing: 8
+                spacing: 0
+                topMargin: 6
+                bottomMargin: 6
                 model: nativeServer.trackedNotifications
                 visible: notificationRoot.notificationsEnabled
+                boundsBehavior: Flickable.StopAtBounds
 
-                Text {
+                Item {
                     anchors.centerIn: parent
-                    text: "No new notifications"
-                    font.family: "Rubik"; font.pixelSize: 13; color: rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff" 
                     visible: notifListView.count === 0 && notificationRoot.notificationsEnabled
+                    width: parent.width
+                    height: 56
+
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 4
+
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "notifications"
+                            font.family: "Material Symbols Outlined"
+                            font.pixelSize: 18
+                            color: "#22ffffff"
+                        }
+
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "No new notifications"
+                            font.family: "Rubik"
+                            font.pixelSize: 12
+                            color: "#40ffffff"
+                        }
+                    }
                 }
 
-                delegate: Item {
-                    width: notifListView.width
-                    height: Math.max(50, summaryLabel.implicitHeight + bodyLabel.implicitHeight + 16)
+                delegate: Rectangle {
+                    width: notifListView.width - 12
+                    x: 6
+                    height: notifItemLayout.implicitHeight + 20
+                    color: cellMouse.containsMouse ? "#0effffff" : "transparent"
+                    radius: 0
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 120
+                        }
+                    }
 
                     Rectangle {
-                        anchors.fill: parent
-                        color: cellMouseArea.containsMouse ? "#0dffffff" : "transparent"
-                        border.color: cellMouseArea.containsMouse ? (rootScope.theme ? rootScope.theme.theme_primary : "#ffffff") : (rootScope.theme ? rootScope.theme.theme_outline : "#26ffffff") 
-                        border.width: 1
-                        radius: 6
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: 2
+                        color: notificationRoot.primaryColor
+                        opacity: cellMouse.containsMouse ? 0.8 : 0.25
 
-                        ColumnLayout {
-                            anchors.fill: parent; anchors.margins: 10; spacing: 2
-
-                            Text {
-                                id: summaryLabel
-                                text: modelData.summary
-                                font.family: "Rubik"; font.pixelSize: 13; font.weight: Font.Bold
-                                color: rootScope.theme ? rootScope.theme.theme_fg : "#ffffff" 
-                                Layout.fillWidth: true; elide: Text.ElideRight
-                            }
-
-                            Text {
-                                id: bodyLabel
-                                text: modelData.body
-                                font.family: "Rubik"; font.pixelSize: 12; color: rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff"
-                                Layout.fillWidth: true; wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 150
                             }
                         }
-                        
-                        MouseArea {
-                            id: cellMouseArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                try { nativeServer.dismiss(modelData.id); } catch(e) {}
-                                try { modelData.dismiss(); } catch(e) {}
-                                notificationRoot.updateCount();
-                                checkUserActivity();
+                    }
+
+                    ColumnLayout {
+                        id: notifItemLayout
+                        anchors {
+                            left: parent.left
+                            leftMargin: 12
+                            right: parent.right
+                            rightMargin: 10
+                            top: parent.top
+                            topMargin: 10
+                        }
+                        spacing: 3
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 5
+
+                            Text {
+                                text: (modelData.appName || "App").toUpperCase()
+                                font.family: "Rubik"
+                                font.pixelSize: 9
+                                font.weight: Font.Bold
+                                color: notificationRoot.primaryColor
+                                opacity: 0.8
                             }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                text: "close"
+                                font.family: "Material Symbols Outlined"
+                                font.pixelSize: 11
+                                color: cellMouse.containsMouse ? "#80ffffff" : "#30ffffff"
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 120
+                                    }
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: modelData.summary
+                            font.family: "Rubik"
+                            font.pixelSize: 12
+                            font.weight: Font.SemiBold
+                            color: "#e0ffffff"
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            text: modelData.body
+                            font.family: "Rubik"
+                            font.pixelSize: 11
+                            color: "#60ffffff"
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
+                            visible: modelData.body !== ""
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: 1
+                        color: "#0cffffff"
+                        visible: index < notifListView.count - 1
+                    }
+
+                    MouseArea {
+                        id: cellMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            try {
+                                nativeServer.dismiss(modelData.id);
+                            } catch (e) {}
+                            try {
+                                modelData.dismiss();
+                            } catch (e) {}
+                            notificationRoot.updateCount();
+                            checkUserActivity();
                         }
                     }
                 }
             }
 
-            Text {
-                id: mutedPlaceholder
+            Item {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                text: "Notifications are muted"
-                font.family: "Rubik"; font.pixelSize: 13; color: rootScope.theme ? rootScope.theme.theme_outline : "#59ffffff"
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
+                height: 80
                 visible: !notificationRoot.notificationsEnabled
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 6
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "do_not_disturb_on"
+                        font.family: "Material Symbols Outlined"
+                        font.pixelSize: 22
+                        color: "#f38ba8"
+                        opacity: 0.6
+                    }
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "Notifications muted"
+                        font.family: "Rubik"
+                        font.pixelSize: 12
+                        color: "#50ffffff"
+                    }
+                }
             }
         }
     }

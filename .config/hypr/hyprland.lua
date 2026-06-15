@@ -37,7 +37,7 @@ hl.env("LIBVA_DRIVER_NAME", "nvidia")
 hl.config({
 	general = {
 		gaps_in = 5,
-		gaps_out = 12,
+		gaps_out = 13,
 		border_size = 0,
 		resize_on_border = false,
 		allow_tearing = false,

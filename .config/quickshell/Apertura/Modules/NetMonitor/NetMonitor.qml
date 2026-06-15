@@ -55,17 +55,18 @@ Item {
 
     Process {
         id: netFetcher
-        command: ["sh", "-c", "iface=$(ip route show | awk '$1 == \"default\" {print $5; exit}'); " + "if [ -z '$iface' ]; then iface=$(ip -4 link show up | awk -F': ' '$2 != \"lo\" {print $2; exit}'); fi; " + "if [ -n '$iface' ]; then " + "  ip_addr=$(ip -4 addr show dev \"$iface\" | awk '$1 == \"inet\" {split($2, a, \"/\"); print a[1]; exit}'); " + "  stats=$(awk -v d=\"$iface\" '{gsub(/[: \t]+/, \" \"); if ($1 == d) print $2\" \"$10}' /proc/net/dev); " + "  echo \"$iface $ip_addr $stats\"; " + "else " + "  echo 'None 0.0.0.0 0 0'; " + "fi"]
-        running: false
+        running: true
+        command: ["sh", "-c", "while true; do " + "iface=$(ip route show | awk '$1 == \"default\" {print $5; exit}'); " + "if [ -z '$iface' ]; then iface=$(ip -4 link show up | awk -F': ' '$2 != \"lo\" {print $2; exit}'); fi; " + "if [ -n '$iface' ]; then " + "  ip_addr=$(ip -4 addr show dev \"$iface\" | awk '$1 == \"inet\" {split($2, a, \"/\"); print a[1]; exit}'); " + "  stats=$(awk -v d=\"$iface\" '{gsub(/[: \t]+/, \" \"); if ($1 == d) print $2\" \"$10}' /proc/net/dev); " + "  echo \"$iface $ip_addr $stats\"; " + "else " + "  echo 'None 0.0.0.0 0 0'; " + "fi; " + "sleep 3; " + "done"]
 
-        stdout: StdioCollector {
+        stdout: SplitParser {
             property var prevRx: 0
             property var prevTx: 0
 
-            onTextChanged: {
+            onRead: text => {
                 let cleaned = text.trim();
                 if (!cleaned)
                     return;
+
                 let parts = cleaned.split(" ");
                 if (parts.length < 4)
                     return;

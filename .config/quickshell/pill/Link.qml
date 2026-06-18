@@ -26,7 +26,7 @@ PillSurface {
 
     property string subview: "main"
 
-    readonly property real desiredW: (subview === "wifi" ? 272 : subview === "bt" ? 286 : 330) * s
+    readonly property real desiredW: (subview === "wifi" ? 272 : subview === "bt" ? 286 : subview === "hotspot" ? 272 : 330) * s
 
     readonly property point emberPoint: {
         void root.width;
@@ -73,6 +73,7 @@ PillSurface {
 
     implicitHeight: subview === "wifi" ? wifiPage.implicitHeight
         : subview === "bt" ? btPage.implicitHeight
+        : subview === "hotspot" ? hotspotPage.implicitHeight
         : mainCol.implicitHeight
 
     readonly property var netDevices: (typeof Networking !== "undefined" && Networking && Networking.devices) ? Networking.devices.values : []
@@ -611,6 +612,97 @@ PillSurface {
                 }
             }
 
+            Rectangle {
+                id: hotspotRow
+                width: parent.width
+                height: 44 * root.s
+                radius: 10 * root.s
+                color: hotspotHover.hovered ? Theme.frameBg : "transparent"
+
+                HoverHandler {
+                    id: hotspotHover
+                    onHoveredChanged: root.reportRowHover(hotspotRow, hovered)
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.subview = "hotspot"
+                }
+
+                GlyphIcon {
+                    id: hotspotGlyph
+                    anchors.left: parent.left
+                    anchors.leftMargin: 8 * root.s
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 17 * root.s
+                    height: 17 * root.s
+                    name: "hotspot"
+                    color: hotspotPage.hsActive ? Theme.vermLit : Theme.iconDim
+                    stroke: 1.7
+                }
+
+                Column {
+                    anchors.left: hotspotGlyph.right
+                    anchors.leftMargin: 11 * root.s
+                    anchors.right: hotspotRight.left
+                    anchors.rightMargin: 8 * root.s
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2 * root.s
+
+                    Text {
+                        width: parent.width
+                        text: "Hotspot"
+                        color: Theme.cream
+                        font.family: Theme.font
+                        font.pixelSize: 12.5 * root.s
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        width: parent.width
+                        text: hotspotPage.hsBusy ? "…" : (hotspotPage.hsActive ? (hotspotPage.hsName || "Active") : "Aus")
+                        color: hotspotPage.hsActive ? Theme.vermLit : Theme.dim
+                        font.family: Theme.font
+                        font.pixelSize: 10 * root.s
+                        font.weight: hotspotPage.hsActive ? Font.DemiBold : Font.Medium
+                        elide: Text.ElideRight
+                    }
+                }
+
+                Row {
+                    id: hotspotRight
+                    anchors.right: parent.right
+                    anchors.rightMargin: 8 * root.s
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 9 * root.s
+
+                    LinkToggle {
+                        s: root.s
+                        anchors.verticalCenter: parent.verticalCenter
+                        on: hotspotPage.hsActive
+                        onToggled: {
+                            if (hotspotPage.hsActive) {
+                                hotspotPage.stopHotspot();
+                            } else {
+                                if (hotspotPage.hsPw.length < 8)
+                                    hotspotPage.hsPw = hotspotPage.generatePw();
+                                hotspotPage.applyHotspot();
+                            }
+                        }
+                    }
+
+                    GlyphIcon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 14 * root.s
+                        height: 14 * root.s
+                        name: "chevron-right"
+                        color: Theme.iconDim
+                        stroke: 1.8
+                    }
+                }
+            }
+
             Item {
                 width: parent.width
                 height: 20 * root.s
@@ -934,6 +1026,23 @@ PillSurface {
         opacity: root.subview === "bt" ? 1 : 0
         visible: opacity > 0.01
         enabled: root.subview === "bt" && root.active
+        Behavior on opacity {
+            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
+        }
+        onBack: root.subview = "main"
+    }
+
+    LinkHotspot {
+        id: hotspotPage
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        s: root.s
+        active: root.active && root.subview === "hotspot"
+        visibleActive: root.active
+        opacity: root.subview === "hotspot" ? 1 : 0
+        visible: opacity > 0.01
+        enabled: root.subview === "hotspot" && root.active
         Behavior on opacity {
             NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
         }

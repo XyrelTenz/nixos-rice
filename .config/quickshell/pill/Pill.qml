@@ -146,7 +146,7 @@ Item {
         id: clock
         readonly property var loc: Qt.locale("en_US")
         readonly property var now: sysClock.date
-        readonly property string hhmm: Qt.formatTime(now, "HH:mm")
+        readonly property string hhmm: Qt.formatTime(now, "h:mm ap")
         readonly property string date: loc.toString(now, "ddd d MMM")
     }
 
@@ -349,8 +349,6 @@ Item {
             return batteryIcon.mapToItem(pill, batteryIcon.width / 2, batteryIcon.height + drop * 0.55);
         if (soulTarget === "mixer")
             return mixerIcon.mapToItem(pill, mixerIcon.width / 2, mixerIcon.height + drop * 0.55);
-        if (soulTarget === "sidebar")
-            return sidebarIcon.mapToItem(pill, sidebarIcon.width / 2, sidebarIcon.height + drop * 0.55);
         if (soulTarget === "power")
             return powerIcon.mapToItem(pill, powerIcon.width / 2, powerIcon.height + drop * 0.55);
         if (soulTarget === "ws" && soulWsIndex >= 0) {
@@ -758,31 +756,6 @@ Item {
                 }
 
                 Item {
-                    id: sidebarIcon
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 17 * pill.s
-                    height: 17 * pill.s
-
-                    GlyphIcon {
-                        anchors.fill: parent
-                        name: "sidebar"
-                        color: sidebarArea.containsMouse ? Theme.cream : Theme.iconDim
-                        stroke: 1.7
-                    }
-
-                    MouseArea {
-                        id: sidebarArea
-                        anchors.fill: parent
-                        anchors.margins: -6 * pill.s
-                        hoverEnabled: true
-                        enabled: hover.live
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: sidebarToggle.running = true
-                        onContainsMouseChanged: if (containsMouse) pill.soulTarget = "sidebar"
-                    }
-                }
-
-                Item {
                     id: powerIcon
                     anchors.verticalCenter: parent.verticalCenter
                     width: 17 * pill.s
@@ -937,12 +910,6 @@ Item {
                 font.weight: Font.DemiBold
             }
         }
-    }
-
-    Process {
-        id: sidebarToggle
-        command: ["sh", "-c", "qs -c sidebar ipc call sidebar toggle \"" + pill.screenName + "\""]
-        running: false
     }
 
 }

@@ -31,7 +31,7 @@ M.general = {
 M.ui = {
 	tabufline = {
 		enabled = true,
-		lazyload = true,
+		lazyload = false,
 	},
 	windbar = {
 		enabled = true,

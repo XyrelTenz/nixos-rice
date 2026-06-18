@@ -1,5 +1,5 @@
 local home = os.getenv("HOME")
-local ok, wc = pcall(dofile, home .. "/.cache/wallust/hypr-colors.lua")
+local ok, wc = pcall(dofile, home .. "/.cache/matugen/hypr-colors.lua")
 if not ok then
 	wc = nil
 end
@@ -16,16 +16,16 @@ local inactive = border(wc and wc.inactive, "#313a4d")
 
 hl.config({
 	general = {
-		gaps_in = 5,
+		gaps_in = 2,
 		gaps_out = 5,
-		border_size = 1,
+		border_size = 2,
 		layout = "dwindle",
 		resize_on_border = true,
 		["col.active_border"] = active,
 		["col.inactive_border"] = inactive,
 	},
 	decoration = {
-		rounding = 2,
+		rounding = 5,
 		rounding_power = 4,
 		active_opacity = 1.0,
 		inactive_opacity = 1.0,

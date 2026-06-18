@@ -1,0 +1,22 @@
+pragma Singleton
+import QtQuick
+import Quickshell
+
+Singleton {
+    readonly property color vermDeep:   "{{base16.base0f.default.hex}}"
+    readonly property color verm:       "{{base16.base08.default.hex}}"
+    readonly property color vermLit:    "{{base16.base09.default.hex}}"
+    readonly property color cream:      "{{base16.base05.default.hex}}"
+    readonly property color bright:     "{{base16.base07.default.hex}}"
+    readonly property color dim:        "{{base16.base04.default.hex}}"
+    readonly property color cardTop:    "{{base16.base01.default.hex}}"
+    readonly property color cardBot:    "{{base16.base00.default.hex}}"
+    readonly property color border:     "{{base16.base02.default.hex}}"
+    readonly property color slotBg:     "{{base16.base01.default.hex}}"
+    readonly property color slotBorder: "{{base16.base02.default.hex}}"
+    readonly property color hair:       Qt.rgba({{base16.base05.default.red}} / 255, {{base16.base05.default.green}} / 255, {{base16.base05.default.blue}} / 255, 0.13)
+    readonly property color sheen:      Qt.rgba({{base16.base05.default.red}} / 255, {{base16.base05.default.green}} / 255, {{base16.base05.default.blue}} / 255, 0.07)
+    readonly property color accent16:   Qt.rgba({{base16.base08.default.red}} / 255, {{base16.base08.default.green}} / 255, {{base16.base08.default.blue}} / 255, 0.16)
+    readonly property color shadow:     Qt.rgba(0, 0, 0, 0.55)
+    readonly property string font:      "Inter"
+}

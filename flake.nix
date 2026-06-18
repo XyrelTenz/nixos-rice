@@ -19,6 +19,9 @@
     nix-cachyos-kernel = {
       url = "github:xddxdd/nix-cachyos-kernel/release";
     };
+    matugen = {
+      url = "github:InioX/matugen";
+    };
   };
 
   outputs = inputs @ {

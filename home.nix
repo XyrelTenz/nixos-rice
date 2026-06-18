@@ -23,7 +23,7 @@ in
     _linkConfig "nvim"                "nvim"
     _linkConfig "quickshell"          "quickshell"
     _linkConfig "fish"                "fish"
-    _linkConfig "wallust"             "wallust"
+    _linkConfig "matugen"             "matugen"
 
     # Starship config lives at ~/.config/starship.toml
     ln -sfn "${repoPath}/starship.toml" "$HOME/.config/starship.toml"
@@ -32,9 +32,9 @@ in
     mkdir -p "$HOME/.config/fastfetch"
     ln -sfn "${repoPath}/fastfetch/lantern.txt" "$HOME/.config/fastfetch/lantern.txt"
 
-    # Create placeholders for wallust cache outputs to prevent startup crashes
-    mkdir -p "$HOME/.cache/wallust"
-    touch "$HOME/.cache/wallust/ghostty-colors"
-    touch "$HOME/.cache/wallust/hypr-colors.lua"
+    # Create placeholders for matugen cache outputs to prevent startup crashes
+    mkdir -p "$HOME/.cache/matugen"
+    touch "$HOME/.cache/matugen/ghostty-colors"
+    touch "$HOME/.cache/matugen/hypr-colors.lua"
   '';
 }

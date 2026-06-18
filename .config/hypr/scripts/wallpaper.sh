@@ -88,5 +88,6 @@ awww img "$pic" \
 mkdir -p "$(dirname "$STATE")"
 printf '%s\n' "$pic" > "$STATE"
 
-wallust run "$pic" >/dev/null 2>&1 || true
+matugen image "$pic" --source-color-index 0 >/dev/null 2>&1 || true
+pkill -f quickshell >/dev/null 2>&1 || true
 hyprctl reload >/dev/null 2>&1 || true

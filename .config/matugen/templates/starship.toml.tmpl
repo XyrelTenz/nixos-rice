@@ -1,0 +1,72 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[░▒▓]({{base16.base0d.default.hex}})\
+[  ](bg:{{base16.base0d.default.hex}} fg:{{base16.base00.default.hex}})\
+[](bg:{{base16.base0c.default.hex}} fg:{{base16.base0d.default.hex}})\
+$directory\
+[](fg:{{base16.base0c.default.hex}} bg:{{base16.base02.default.hex}})\
+$git_branch\
+$git_status\
+[](fg:{{base16.base02.default.hex}} bg:{{base16.base01.default.hex}})\
+$nodejs\
+$bun\
+$rust\
+$golang\
+$php\
+[](fg:{{base16.base01.default.hex}} bg:{{base16.base00.default.hex}})\
+$time\
+[ ](fg:{{base16.base00.default.hex}})\
+\n$character"""
+
+[directory]
+style = "fg:{{base16.base06.default.hex}} bg:{{base16.base0c.default.hex}}"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[git_branch]
+symbol = ""
+style = "bg:{{base16.base02.default.hex}}"
+format = '[[ $symbol $branch ](fg:{{base16.base0d.default.hex}} bg:{{base16.base02.default.hex}})]($style)'
+
+[git_status]
+style = "bg:{{base16.base02.default.hex}}"
+format = '[[($all_status$ahead_behind )](fg:{{base16.base0d.default.hex}} bg:{{base16.base02.default.hex}})]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:{{base16.base01.default.hex}}"
+format = '[[ $symbol ($version) ](fg:{{base16.base0d.default.hex}} bg:{{base16.base01.default.hex}})]($style)'
+
+[bun]
+symbol = ""
+style = "bg:{{base16.base01.default.hex}}"
+format = '[[ $symbol ($version) ](fg:{{base16.base0d.default.hex}} bg:{{base16.base01.default.hex}})]($style)'
+
+[rust]
+symbol = ""
+style = "bg:{{base16.base01.default.hex}}"
+format = '[[ $symbol ($version) ](fg:{{base16.base0d.default.hex}} bg:{{base16.base01.default.hex}})]($style)'
+
+[golang]
+symbol = ""
+style = "bg:{{base16.base01.default.hex}}"
+format = '[[ $symbol ($version) ](fg:{{base16.base0d.default.hex}} bg:{{base16.base01.default.hex}})]($style)'
+
+[php]
+symbol = ""
+style = "bg:{{base16.base01.default.hex}}"
+format = '[[ $symbol ($version) ](fg:{{base16.base0d.default.hex}} bg:{{base16.base01.default.hex}})]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:{{base16.base00.default.hex}}"
+format = '[[  $time ](fg:{{base16.base04.default.hex}} bg:{{base16.base00.default.hex}})]($style)'

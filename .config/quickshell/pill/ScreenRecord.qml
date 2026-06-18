@@ -85,7 +85,7 @@ Item {
 
     Process {
         id: stopRecord
-        command: ["sh", "-c", "pkill -INT wf-recorder && notify-send \"Screen Recorder\" \"Recording saved to ~/Videos/ScreenRecord/\" -i media-record"]
+        command: ["sh", "-c", "pkill -INT wf-recorder && sleep 1 && vlc \"$(ls -t /home/xyreltenz/Videos/ScreenRecord/*.mp4 2>/dev/null | head -1)\" & notify-send \"Screen Recorder\" \"Recording saved. Opening in VLC...\" -i media-record"]
         running: false
         onExited: (code) => {
             checkStatus.running = true;

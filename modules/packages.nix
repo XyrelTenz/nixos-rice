@@ -2,13 +2,32 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
-}: {
+}: let
+  matugenPkg = inputs.matugen.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  img2art = pkgs.python3.pkgs.buildPythonApplication rec {
+    pname = "img2art";
+    version = "0.4.3";
+    format = "wheel";
+    src = pkgs.fetchurl {
+      url = "https://files.pythonhosted.org/packages/14/4b/b62b1646a4908df80968ff31383c01412e8c17ecf6a343762d072f20600d/img2art-0.4.3-py3-none-any.whl";
+      sha256 = "sha256-N47r/GbBAbJJoeYnmtNgR3hbdpq/hrMyC1i/Eb8WYiU=";
+    };
+    propagatedBuildInputs = with pkgs.python3.pkgs; [
+      numpy
+      opencv4
+      typer
+    ];
+    pythonRemoveDeps = [ "opencv-python" ];
+    pythonRelaxDeps = [ "typer" ];
+    doCheck = false;
+  };
+in {
   environment.systemPackages = with pkgs; [
     wget
     git
     ghostty
-    rofi
     fastfetch
     unzip
     go
@@ -17,11 +36,9 @@
     starship
     ripgrep
     wf-recorder
-    slurp
 
     kdePackages.dolphin
     kdePackages.qtsvg
-    waybar
     firefox
 
     neovim
@@ -67,19 +84,18 @@
     zed-editor-fhs
 
     grim
-    slurp
     satty
     hyprpicker
     wl-clipboard
     cava
-    matugen
+    matugenPkg
     awww
     brightnessctl
-    wallust
     cliphist
     imagemagick
     jq
-    zoxide
+    img2art
+    vlc
     ddcutil
     (symlinkJoin {
       name = "quickshell-wrapped";
@@ -87,7 +103,7 @@
       nativeBuildInputs = [makeWrapper];
       postBuild = ''
         wrapProgram $out/bin/qs \
-          --prefix PATH : "${lib.makeBinPath [(python3.withPackages (ps: [ps.pyxdg])) bluez networkmanager wireplumber matugen awww cava bash brightnessctl grim slurp satty hyprpicker wl-clipboard wallust cliphist imagemagick jq ddcutil]}" \
+          --prefix PATH : "${lib.makeBinPath [(python3.withPackages (ps: [ps.pyxdg])) bluez networkmanager wireplumber matugenPkg awww cava bash brightnessctl grim slurp satty hyprpicker wl-clipboard cliphist imagemagick jq ddcutil]}" \
           --prefix QML2_IMPORT_PATH : "${kdePackages.qt5compat}/lib/qt-6/qml" \
           --prefix QT_PLUGIN_PATH : "${kdePackages.qtimageformats}/lib/qt-6/plugins"
       '';

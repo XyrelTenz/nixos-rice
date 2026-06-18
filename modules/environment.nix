@@ -16,4 +16,5 @@
 
   # Registers fish in /etc/shells so it can be used as a login shell
   programs.fish.enable = true;
+  programs.zoxide.enable = true;
 }

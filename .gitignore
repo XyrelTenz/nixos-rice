@@ -79,3 +79,12 @@ Cargo.lock
 # Uncomment the line below if you want lazy.nvim to NOT track plugin versions in Git.
 # Otherwise, keep it committed for reproducible editor environments.
 # .config/nvim/lazy-lock.json
+
+# ==============================================================================
+# QuickShell Generated Themes
+# ==============================================================================
+.config/quickshell/pill/Singletons/Theme.qml
+.config/quickshell/topbar/Singletons/Theme.qml
+.config/quickshell/lock/Singletons/Theme.qml
+.config/quickshell/sidebar/Singletons/Theme.qml
+.config/starship.toml

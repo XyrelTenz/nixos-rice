@@ -17,19 +17,19 @@
   "display": {
     "separator": "  ",
     "color": {
-      "keys": "38;2;{{color3 | red}};{{color3 | green}};{{color3 | blue}}"
+      "keys": "38;2;{{base16.base0a.default.red}};{{base16.base0a.default.green}};{{base16.base0a.default.blue}}"
     },
     "key": { "width": 10 }
   },
   "modules": [
     "break",
-    { "type": "custom", "format": "\u001b[38;2;{{color8 | red}};{{color8 | green}};{{color8 | blue}}m── system ──────────────" },
+    { "type": "custom", "format": "\u001b[38;2;{{base16.base03.default.red}};{{base16.base03.default.green}};{{base16.base03.default.blue}}m── system ──────────────" },
     { "type": "os", "key": "  os", "format": "{pretty-name}" },
     { "type": "kernel", "key": "  kernel", "format": "{release}" },
     { "type": "uptime", "key": "  up" },
     { "type": "packages", "key": " 󰏖 pkgs", "format": "{all}" },
     "break",
-    { "type": "custom", "format": "\u001b[38;2;{{color8 | red}};{{color8 | green}};{{color8 | blue}}m── rice ────────────────" },
+    { "type": "custom", "format": "\u001b[38;2;{{base16.base03.default.red}};{{base16.base03.default.green}};{{base16.base03.default.blue}}m── rice ────────────────" },
     { "type": "wm", "key": "  wm", "format": "{pretty-name}" },
     { "type": "shell", "key": "  shell", "format": "{exe-name}" },
     { "type": "terminal", "key": "  term", "format": "{pretty-name}" },

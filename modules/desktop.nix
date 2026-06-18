@@ -28,6 +28,9 @@
   hardware.graphics.enable = true;
   hardware.bluetooth.enable = true;
 
+  # UPower daemon for battery tracking
+  services.upower.enable = true;
+
   # XDG desktop portal
   xdg.portal = {
     enable = true;

@@ -34,6 +34,7 @@ Item {
         transform: Translate { x: sidebar.slideOffset }
 
         gradient: Gradient {
+        
             GradientStop { position: 0.0; color: Theme.cardTop }
             GradientStop { position: 1.0; color: Theme.cardBot }
         }

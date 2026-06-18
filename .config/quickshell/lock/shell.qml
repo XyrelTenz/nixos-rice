@@ -6,6 +6,13 @@ import Quickshell.Io
 import Quickshell.Wayland
 import "Singletons"
 
+/*TODO:
+ * /home/xyreltenz/Ricelin
+ * observe this folder i clone and what's wrong is my implementation why my lockscreen not working when i type. Also check the latest change on
+ * it for battery and apply the changes to my config and remove not used folder like topbar. Change the pill time format into 12am-12pm instead
+ * of 24 hour format. Also when i click sidebar icon on pill nothing happen.
+ */
+
 ShellRoot {
     id: root
 
@@ -20,7 +27,6 @@ ShellRoot {
             Pw.text = "";
         }
     }
-
 
     WlSessionLock {
         id: sessionLock

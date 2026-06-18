@@ -6,6 +6,7 @@ import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
+import Quickshell.Networking
 import "Singletons"
 
 /**
@@ -39,7 +40,15 @@ Item {
     readonly property bool powerOpen: surface === "power"
     readonly property bool mediaOpen: surface === "media"
     readonly property bool linkOpen: surface === "link"
+    readonly property bool batteryOpen: surface === "battery"
     readonly property bool hasMedia: Mpris.players.values.length > 0
+
+    readonly property var netDevices: (typeof Networking !== "undefined" && Networking && Networking.devices) ? Networking.devices.values : []
+    readonly property var wifiDev: netDevices.find(function(d) { return d && d.type === DeviceType.Wifi }) || null
+    readonly property bool wifiOn: (typeof Networking !== "undefined" && Networking) ? Networking.wifiEnabled : false
+    readonly property var wifiNets: (wifiDev && wifiDev.networks) ? wifiDev.networks.values : []
+    readonly property var wifiActive: wifiNets.find(function(n) { return n && n.connected }) || null
+    readonly property real wifiLevel: (wifiActive && wifiActive.signalStrength) || 0
     readonly property bool surfaceOpen: surface.length > 0
     property bool hoverLatch: false
     readonly property bool expanded: surfaceOpen || held || hoverLatch
@@ -65,6 +74,7 @@ Item {
     readonly property real powerH: 150 * s
     readonly property real mediaW: 390 * s
     readonly property real mediaH: 150 * s
+    readonly property real batteryW: 316 * s
     readonly property real toastW: 342 * s
     readonly property real restCorner: 18 * s
     readonly property real openCorner: 22 * s
@@ -77,9 +87,10 @@ Item {
         : (mediaOpen ? "media"
         : (mixerOpen ? "mixer"
         : (linkOpen ? "link"
+        : (batteryOpen ? "battery"
         : (osdActive && !held ? "osd"
         : (toastActive && !held ? "toast"
-        : (expanded ? "hover" : "rest"))))))))))
+        : (expanded ? "hover" : "rest")))))))))))
 
     signal requestSurface(string name)
     signal requestClose()
@@ -160,6 +171,7 @@ Item {
         media:     () => Qt.size(mediaW, mediaH),
         mixer:     () => Qt.size(mixerW, mixerH),
         link:      () => Qt.size(link.desiredW, link.implicitHeight + 26 * s),
+        battery:   () => Qt.size(batteryW, battery.implicitHeight + 26 * s),
         osd:       () => Qt.size(osd.desiredW, osd.desiredH),
         toast:     () => Qt.size(toastW, toastLoader.item ? toastLoader.item.implicitHeight + 24 * s : restH),
         hover:     () => Qt.size(hoverW, hoverH)
@@ -327,6 +339,8 @@ Item {
         void pill.width;
         void pill.height;
         const drop = 12 * pill.s;
+        if (soulTarget === "wifi")
+            return wifiIcon.mapToItem(pill, wifiIcon.width / 2, wifiIcon.height + drop * 0.55);
         if (soulTarget === "inbox")
             return inboxIcon.mapToItem(pill, inboxIcon.width / 2, inboxIcon.height + drop * 0.55);
         if (soulTarget === "record")
@@ -359,7 +373,8 @@ Item {
         : (calendarOpen ? calendar
         : (mixerOpen ? mixer
         : (powerOpen ? power
-        : (linkOpen ? link : null))))))
+        : (linkOpen ? link
+        : (batteryOpen ? battery : null)))))))
 
     Ame {
         id: ame
@@ -655,11 +670,65 @@ Item {
                     onHoveredChanged: if (hovered) pill.soulTarget = "record"
                 }
 
-                Battery {
-                    id: batteryIcon
+                Row {
                     anchors.verticalCenter: parent.verticalCenter
-                    s: pill.s
-                    onHoveredChanged: if (hovered) pill.soulTarget = "battery"
+                    visible: Battery.present
+                    spacing: 12 * pill.s
+
+                    Item {
+                        id: wifiIcon
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: pill.wifiDev !== null && pill.wifiOn
+                        width: 17 * pill.s
+                        height: 17 * pill.s
+
+                        WifiGlyph {
+                            anchors.centerIn: parent
+                            s: pill.s
+                            level: pill.wifiLevel
+                            on: pill.wifiOn
+                        }
+
+                        MouseArea {
+                            id: wifiArea
+                            anchors.fill: parent
+                            anchors.margins: -6 * pill.s
+                            hoverEnabled: true
+                            enabled: hover.live
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: pill.requestSurface("link")
+                            onContainsMouseChanged: if (containsMouse) pill.soulTarget = "wifi"
+                        }
+                    }
+
+                    Item {
+                        id: batteryIcon
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: battPct.implicitWidth
+                        height: 17 * pill.s
+
+                        Text {
+                            id: battPct
+                            anchors.centerIn: parent
+                            text: Battery.pct + "%"
+                            color: Battery.low ? Theme.vermLit : (Battery.charging ? Theme.flameGlow : Theme.subtle)
+                            font.family: Theme.font
+                            font.pixelSize: 13 * pill.s
+                            font.weight: Battery.charging ? Font.DemiBold : Font.Medium
+                            font.features: { "tnum": 1 }
+                        }
+
+                        MouseArea {
+                            id: batteryArea
+                            anchors.fill: parent
+                            anchors.margins: -6 * pill.s
+                            hoverEnabled: true
+                            enabled: hover.live
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: pill.requestSurface("battery")
+                            onContainsMouseChanged: if (containsMouse) pill.soulTarget = "battery"
+                        }
+                    }
                 }
 
 
@@ -799,6 +868,14 @@ Item {
         id: link
         s: pill.s
         open: pill.linkOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+    }
+
+    BatterySurface {
+        id: battery
+        s: pill.s
+        open: pill.batteryOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }

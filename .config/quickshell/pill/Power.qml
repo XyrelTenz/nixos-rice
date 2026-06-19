@@ -75,8 +75,18 @@ PillSurface {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8 * root.s
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: Flags.showGlyphs
+                text: "電"
+                color: Theme.cream
+                font.family: Theme.fontJp
+                font.weight: Font.Medium
+                font.pixelSize: 16 * root.s
+            }
             GlyphIcon {
                 anchors.verticalCenter: parent.verticalCenter
+                visible: !Flags.showGlyphs
                 width: 16 * root.s
                 height: 16 * root.s
                 name: "shutdown"

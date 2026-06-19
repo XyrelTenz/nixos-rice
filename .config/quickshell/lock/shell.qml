@@ -18,6 +18,12 @@ ShellRoot {
 
     readonly property string currentUser: Quickshell.env("USER") || Quickshell.env("LOGNAME") || ""
 
+    Connections {
+        target: Quickshell
+        function onReloadCompleted() { Quickshell.inhibitReloadPopup(); }
+        function onReloadFailed(errorString) { Quickshell.inhibitReloadPopup(); }
+    }
+
     Auth {
         id: pamAuth
         user: root.currentUser
@@ -52,5 +58,6 @@ ShellRoot {
             sessionLock.locked = true;
             Cava.enabled = true;
         }
+        function reload(): void { Quickshell.reload(false); }
     }
 }

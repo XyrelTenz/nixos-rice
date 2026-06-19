@@ -6,6 +6,7 @@
   ...
 }: let
   matugenPkg = inputs.matugen.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  neovim-11 = inputs.nixpkgs-neovim-11.legacyPackages.${pkgs.stdenv.hostPlatform.system}.neovim;
   img2art = pkgs.python3.pkgs.buildPythonApplication rec {
     pname = "img2art";
     version = "0.4.3";
@@ -36,13 +37,15 @@ in {
     starship
     ripgrep
     wf-recorder
+    scrcpy
 
     kdePackages.dolphin
     kdePackages.qtsvg
     firefox
 
-    neovim
+    neovim-11
     android-tools
+    android-studio
     tree-sitter
     flutter
     nodejs_22
@@ -56,6 +59,7 @@ in {
     clang-tools
     typescript
     typescript-language-server
+    taplo
     vue-language-server
     lua-language-server
     gopls

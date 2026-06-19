@@ -101,6 +101,7 @@ PillSurface {
         anchors.right: parent.right
         s: root.s
         icon: "clipboard"
+        kanji: "控"
         placeholder: "Search clipboard"
         counterText: root.results.length + " / " + Cliphist.count
         onTextChanged: {

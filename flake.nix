@@ -22,6 +22,7 @@
     matugen = {
       url = "github:InioX/matugen";
     };
+    nixpkgs-neovim-11.url = "github:nixos/nixpkgs/832efc09b4caf6b4569fbf9dc01bec3082a00611";
   };
 
   outputs = inputs @ {

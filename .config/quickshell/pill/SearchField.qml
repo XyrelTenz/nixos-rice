@@ -25,14 +25,15 @@ Item {
         id: glyphContainer
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
-        width: 16 * root.s
+        visible: Flags.showGlyphs ? (root.kanji !== "") : (root.icon !== "")
+        width: visible ? 16 * root.s : 0
         height: 16 * root.s
 
         GlyphIcon {
             anchors.fill: parent
             name: root.icon
             color: Theme.dim
-            visible: root.icon !== ""
+            visible: !Flags.showGlyphs && root.icon !== ""
         }
 
         Text {
@@ -42,7 +43,7 @@ Item {
             font.family: Theme.fontJp
             font.weight: Font.Medium
             font.pixelSize: 16 * root.s
-            visible: root.icon === ""
+            visible: Flags.showGlyphs && root.kanji !== ""
         }
     }
 
@@ -50,7 +51,7 @@ Item {
         id: field
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: glyphContainer.right
-        anchors.leftMargin: 10 * root.s
+        anchors.leftMargin: glyphContainer.visible ? 10 * root.s : 0
         anchors.right: counter.left
         anchors.rightMargin: 10 * root.s
         background: null

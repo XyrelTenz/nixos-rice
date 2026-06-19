@@ -32,6 +32,12 @@ ShellRoot {
     property string openSurface: ""
     property string peekMon: ""
 
+    Connections {
+        target: Quickshell
+        function onReloadCompleted() { Quickshell.inhibitReloadPopup(); }
+        function onReloadFailed(errorString) { Quickshell.inhibitReloadPopup(); }
+    }
+
     function refresh() {
         Hyprland.refreshMonitors();
         Hyprland.refreshWorkspaces();
@@ -116,6 +122,7 @@ ShellRoot {
         function power(mon: string): void { root.toggleSurface(mon, "power"); }
         function link(mon: string): void { root.toggleSurface(mon, "link"); }
         function battery(mon: string): void { root.toggleSurface(mon, "battery"); }
+        function settings(mon: string): void { root.toggleSurface(mon, "settings"); }
         function clipboard(mon: string): void { root.toggleSurface(mon, "clipboard"); }
         function wallpaper(mon: string): void { root.toggleSurface(mon, "wallpaper"); }
         function media(mon: string): void {
@@ -124,6 +131,7 @@ ShellRoot {
         }
         function peek(mon: string): void { root.peek(mon); }
         function hide(): void { root.close(); }
+        function reload(): void { Quickshell.reload(false); }
     }
 
     Variants {

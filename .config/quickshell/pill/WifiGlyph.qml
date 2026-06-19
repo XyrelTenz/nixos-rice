@@ -20,7 +20,7 @@ Item {
     implicitHeight: 17 * s
 
     readonly property int litCount: !on ? 0 : (level > 0.66 ? 3 : (level > 0.33 ? 2 : (level > 0 ? 1 : 0)))
-    readonly property color offColor: on ? Theme.threadBg : Qt.alpha(Theme.threadBg, 0.45)
+    readonly property color offColor: on ? Qt.alpha(Theme.iconDim, 0.4) : Qt.alpha(Theme.iconDim, 0.18)
 
     Shape {
         id: arcs
@@ -63,7 +63,7 @@ Item {
         ShapePath {
             strokeColor: root.on ? "transparent" : Theme.faint
             fillColor: "transparent"
-            strokeWidth: 1.8 * root.s
+            strokeWidth: 1.7 * root.s
             capStyle: ShapePath.RoundCap
             scale: Qt.size(arcs.u, arcs.u)
             PathSvg { path: "M4 3 L20 19" }

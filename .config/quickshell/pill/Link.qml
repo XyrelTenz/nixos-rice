@@ -26,7 +26,14 @@ PillSurface {
 
     property string subview: "main"
 
-    readonly property real desiredW: (subview === "wifi" ? 272 : subview === "bt" ? 286 : subview === "hotspot" ? 272 : 330) * s
+    /**
+     * Subview to land on the next time the surface opens. The pill sets this from
+     * the glance that opened the surface (wifi → "wifi", inbox → "main") so the
+     * wifi glance drills straight to the network list past the connectivity rows.
+     */
+    property string initialView: "main"
+
+    readonly property real desiredW: (subview === "wifi" ? 272 : subview === "bt" ? 286 : 330) * s
 
     readonly property point emberPoint: {
         void root.width;
@@ -73,7 +80,6 @@ PillSurface {
 
     implicitHeight: subview === "wifi" ? wifiPage.implicitHeight
         : subview === "bt" ? btPage.implicitHeight
-        : subview === "hotspot" ? hotspotPage.implicitHeight
         : mainCol.implicitHeight
 
     readonly property var netDevices: (typeof Networking !== "undefined" && Networking && Networking.devices) ? Networking.devices.values : []
@@ -133,7 +139,7 @@ PillSurface {
 
     onActiveChanged: {
         if (active) {
-            subview = "main";
+            subview = (initialView === "wifi" && wifiDev) ? "wifi" : "main";
             seenTimer.restart();
         } else {
             seenTimer.stop();
@@ -369,13 +375,14 @@ PillSurface {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 8 * root.s
 
-                    GlyphIcon {
+                    Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 16 * root.s
-                        height: 16 * root.s
-                        name: "inbox"
+                        visible: Flags.showGlyphs
+                        text: "繋"
                         color: Theme.cream
-                        stroke: 1.7
+                        font.family: Theme.fontJp
+                        font.weight: Font.Medium
+                        font.pixelSize: 16 * root.s
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
@@ -612,97 +619,6 @@ PillSurface {
                 }
             }
 
-            Rectangle {
-                id: hotspotRow
-                width: parent.width
-                height: 44 * root.s
-                radius: 10 * root.s
-                color: hotspotHover.hovered ? Theme.frameBg : "transparent"
-
-                HoverHandler {
-                    id: hotspotHover
-                    onHoveredChanged: root.reportRowHover(hotspotRow, hovered)
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.subview = "hotspot"
-                }
-
-                GlyphIcon {
-                    id: hotspotGlyph
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8 * root.s
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 17 * root.s
-                    height: 17 * root.s
-                    name: "hotspot"
-                    color: hotspotPage.hsActive ? Theme.vermLit : Theme.iconDim
-                    stroke: 1.7
-                }
-
-                Column {
-                    anchors.left: hotspotGlyph.right
-                    anchors.leftMargin: 11 * root.s
-                    anchors.right: hotspotRight.left
-                    anchors.rightMargin: 8 * root.s
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2 * root.s
-
-                    Text {
-                        width: parent.width
-                        text: "Hotspot"
-                        color: Theme.cream
-                        font.family: Theme.font
-                        font.pixelSize: 12.5 * root.s
-                        font.weight: Font.DemiBold
-                        elide: Text.ElideRight
-                    }
-                    Text {
-                        width: parent.width
-                        text: hotspotPage.hsBusy ? "…" : (hotspotPage.hsActive ? (hotspotPage.hsName || "Active") : "Aus")
-                        color: hotspotPage.hsActive ? Theme.vermLit : Theme.dim
-                        font.family: Theme.font
-                        font.pixelSize: 10 * root.s
-                        font.weight: hotspotPage.hsActive ? Font.DemiBold : Font.Medium
-                        elide: Text.ElideRight
-                    }
-                }
-
-                Row {
-                    id: hotspotRight
-                    anchors.right: parent.right
-                    anchors.rightMargin: 8 * root.s
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 9 * root.s
-
-                    LinkToggle {
-                        s: root.s
-                        anchors.verticalCenter: parent.verticalCenter
-                        on: hotspotPage.hsActive
-                        onToggled: {
-                            if (hotspotPage.hsActive) {
-                                hotspotPage.stopHotspot();
-                            } else {
-                                if (hotspotPage.hsPw.length < 8)
-                                    hotspotPage.hsPw = hotspotPage.generatePw();
-                                hotspotPage.applyHotspot();
-                            }
-                        }
-                    }
-
-                    GlyphIcon {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 14 * root.s
-                        height: 14 * root.s
-                        name: "chevron-right"
-                        color: Theme.iconDim
-                        stroke: 1.8
-                    }
-                }
-            }
-
             Item {
                 width: parent.width
                 height: 20 * root.s
@@ -719,23 +635,24 @@ PillSurface {
                         height: 10 * root.s
                     }
 
-                    GlyphIcon {
+                    Text {
                         id: inboxKanji
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 12 * root.s
-                        height: 12 * root.s
-                        name: "inbox"
+                        visible: Flags.showGlyphs
+                        text: "報"
                         color: Theme.dim
-                        stroke: 1.7
+                        font.family: Theme.fontJp
+                        font.weight: Font.Medium
+                        font.pixelSize: 11.5 * root.s
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "INBOX"
+                        text: Flags.showGlyphs ? "INBOX" : "Notifications"
                         color: Theme.faint
                         font.family: Theme.font
                         font.pixelSize: 9 * root.s
                         font.weight: Font.Bold
-                        font.letterSpacing: 1.8 * root.s
+                        font.letterSpacing: Flags.showGlyphs ? 1.8 * root.s : 0.8 * root.s
                     }
                 }
 
@@ -746,13 +663,13 @@ PillSurface {
                     visible: Notifs.count > 0
                     spacing: 4 * root.s
 
-                    GlyphIcon {
+                    Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 11 * root.s
-                        height: 11 * root.s
-                        name: "trash"
+                        text: "払"
                         color: clearArea.containsMouse ? Theme.vermLit : Theme.vermDim
-                        stroke: 1.7
+                        font.family: Theme.fontJp
+                        font.pixelSize: 9 * root.s
+                        font.weight: Font.Bold
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
@@ -978,8 +895,19 @@ PillSurface {
                 bottomPadding: 14 * root.s
                 spacing: 4 * root.s
 
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    visible: Flags.showGlyphs
+                    text: "静"
+                    color: Theme.ghost
+                    opacity: 0.55
+                    font.family: Theme.fontJp
+                    font.weight: Font.Medium
+                    font.pixelSize: 32 * root.s
+                }
                 GlyphIcon {
                     anchors.horizontalCenter: parent.horizontalCenter
+                    visible: !Flags.showGlyphs
                     width: 32 * root.s
                     height: 32 * root.s
                     name: "dnd"
@@ -989,12 +917,12 @@ PillSurface {
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "SILENCE"
+                    text: Flags.showGlyphs ? "SILENCE" : "No notifications to display"
                     color: Theme.faint
                     font.family: Theme.font
                     font.pixelSize: 9 * root.s
                     font.weight: Font.Bold
-                    font.letterSpacing: 2.2 * root.s
+                    font.letterSpacing: Flags.showGlyphs ? 2.2 * root.s : 0.8 * root.s
                 }
             }
         }
@@ -1026,23 +954,6 @@ PillSurface {
         opacity: root.subview === "bt" ? 1 : 0
         visible: opacity > 0.01
         enabled: root.subview === "bt" && root.active
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
-        }
-        onBack: root.subview = "main"
-    }
-
-    LinkHotspot {
-        id: hotspotPage
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        s: root.s
-        active: root.active && root.subview === "hotspot"
-        visibleActive: root.active
-        opacity: root.subview === "hotspot" ? 1 : 0
-        visible: opacity > 0.01
-        enabled: root.subview === "hotspot" && root.active
         Behavior on opacity {
             NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
         }

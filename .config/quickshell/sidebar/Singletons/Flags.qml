@@ -7,14 +7,18 @@ import Quickshell.Io
  * Shared session flags persisted to a small JSON file and watched for external
  * change, so every Ricelin daemon (pill, sidebar) reads and writes the same
  * Do-Not-Disturb and Keep-Awake state live without a second notification server
- * or idle inhibitor. Toggling in one surface updates the others on the next file
- * event, and the state survives a daemon restart.
+ * or idle
  */
 Singleton {
     id: root
 
     property alias dnd: adapter.dnd
     property alias keepAwake: adapter.keepAwake
+    property alias time12h: adapter.time12h
+    property alias clockSeconds: adapter.clockSeconds
+    property alias showGlyphs: adapter.showGlyphs
+    property alias dynamicPalette: adapter.dynamicPalette
+    property alias recordCountdown: adapter.recordCountdown
 
     FileView {
         id: file
@@ -30,8 +34,11 @@ Singleton {
             id: adapter
             property bool dnd: false
             property bool keepAwake: false
+            property bool time12h: false
+            property bool clockSeconds: false
+            property bool showGlyphs: true
+            property bool dynamicPalette: false
+            property int recordCountdown: 5
         }
     }
-
-    Component.onCompleted: if (!file.loaded) file.writeAdapter();
 }

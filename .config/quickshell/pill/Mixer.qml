@@ -23,12 +23,15 @@ PillSurface {
     readonly property int faderCount: faders.length
     readonly property var faders: {
         void brRep.count;
+        void blLoader.item;
         var out = [];
         for (var i = 0; i < brRep.count; i++) {
             var f = brRep.itemAt(i);
             if (f)
                 out.push(f);
         }
+        if (blLoader.item)
+            out.push(blLoader.item);
         out.push(vibFader, volFader, micFader);
         return out;
     }
@@ -93,6 +96,7 @@ PillSurface {
     Component.onCompleted: Devices.detect()
 
     property real pendingVibrance: -1
+    property int pendingBacklight: -1
 
     Timer {
         id: vibDebounce
@@ -100,6 +104,15 @@ PillSurface {
         onTriggered: if (root.pendingVibrance >= 0) {
             Devices.setVibrance(root.pendingVibrance);
             root.pendingVibrance = -1;
+        }
+    }
+
+    Timer {
+        id: blDebounce
+        interval: 160
+        onTriggered: if (root.pendingBacklight >= 0) {
+            Devices.setBacklight(root.pendingBacklight);
+            root.pendingBacklight = -1;
         }
     }
 
@@ -111,6 +124,8 @@ PillSurface {
         id: chip
         property string glyph: ""
         property bool on: false
+        property string tipTitle: ""
+        property string tipDesc: ""
         signal toggled()
 
         width: 26 * root.s
@@ -128,15 +143,43 @@ PillSurface {
             color: chip.on ? Theme.vermLit : Theme.iconDim
             stroke: 1.7
         }
+        HoverHandler {
+            id: chipHover
+        }
         MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: chip.toggled()
         }
+
+        Tooltip {
+            s: root.s
+            placement: "below"
+            title: chip.tipTitle
+            desc: chip.tipDesc
+            show: chipHover.hovered
+        }
+    }
+
+    component FaderTip: Item {
+        id: faderTip
+        property string title: ""
+        property bool show: false
+        width: 1
+        height: 18 * root.s
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        Tooltip {
+            s: root.s
+            title: faderTip.title
+            show: faderTip.show
+        }
     }
 
     Item {
         id: header
+        z: 5
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -146,8 +189,18 @@ PillSurface {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8 * root.s
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: Flags.showGlyphs
+                text: "調"
+                color: Theme.cream
+                font.family: Theme.fontJp
+                font.weight: Font.Medium
+                font.pixelSize: 16 * root.s
+            }
             GlyphIcon {
                 anchors.verticalCenter: parent.verticalCenter
+                visible: !Flags.showGlyphs
                 width: 16 * root.s
                 height: 16 * root.s
                 name: "mixer"
@@ -173,11 +226,15 @@ PillSurface {
             IconChip {
                 glyph: "dnd"
                 on: Flags.dnd
+                tipTitle: "Do not disturb"
+                tipDesc: "Silence notifications"
                 onToggled: Flags.dnd = !Flags.dnd
             }
             IconChip {
                 glyph: "awake"
                 on: Flags.keepAwake
+                tipTitle: "Keep awake"
+                tipDesc: "Block sleep & screen-off"
                 onToggled: Flags.keepAwake = !Flags.keepAwake
             }
         }
@@ -251,6 +308,34 @@ PillSurface {
                         }
                     }
                 }
+
+                FaderTip {
+                    title: "Brightness"
+                    show: root.hoverIndex === brFader.index
+                }
+            }
+        }
+
+        Loader {
+            id: blLoader
+            active: Devices.backlightPresent
+            visible: active
+            width: active ? faderRow.colW : 0
+
+            sourceComponent: VFader {
+                width: faderRow.colW
+                s: root.s
+                icon: "sun"
+                focused: root.focusIndex === brRep.count
+                value: Devices.backlightPct / 100
+                valueLabel: Devices.backlightPct + "%"
+                onMoved: (v) => Devices.backlightPct = Math.max(1, Math.min(100, Math.round(v * 100)))
+                onCommitted: (v) => { root.pendingBacklight = Math.max(1, Math.min(100, Math.round(v * 100))); blDebounce.restart(); }
+
+                FaderTip {
+                    title: "Brightness"
+                    show: root.hoverIndex === brRep.count
+                }
             }
         }
 
@@ -264,6 +349,11 @@ PillSurface {
             valueLabel: Devices.vibrance + "%"
             onMoved: (v) => Devices.vibrance = Math.round(v * 100)
             onCommitted: (v) => { root.pendingVibrance = v * 100; vibDebounce.restart(); }
+
+            FaderTip {
+                title: "Vibrance"
+                show: root.hoverIndex === root.faderCount - 3
+            }
         }
         VFader {
             id: volFader
@@ -274,6 +364,11 @@ PillSurface {
             value: root.sink && root.sink.audio ? root.sink.audio.volume : 0
             valueLabel: Math.round((root.sink && root.sink.audio ? root.sink.audio.volume : 0) * 100) + "%"
             onMoved: (v) => { if (root.sink && root.sink.audio) root.sink.audio.volume = v; }
+
+            FaderTip {
+                title: "Volume"
+                show: root.hoverIndex === root.faderCount - 2
+            }
         }
         VFader {
             id: micFader
@@ -288,12 +383,20 @@ PillSurface {
             onMoved: (v) => { if (root.source && root.source.audio) root.source.audio.volume = v; }
 
             MouseArea {
+                id: micMute
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: 24 * root.s
                 height: 22 * root.s
                 cursorShape: Qt.PointingHandCursor
                 onClicked: { if (root.source && root.source.audio) root.source.audio.muted = !root.source.audio.muted; }
+
+                Tooltip {
+                    s: root.s
+                    title: "Microphone"
+                    desc: "Click the icon to mute"
+                    show: root.hoverIndex === root.faderCount - 1
+                }
             }
         }
     }

@@ -96,11 +96,26 @@ PillSurface {
         }
     }
 
+    Text {
+        anchors.left: parent.left
+        anchors.leftMargin: 20 * root.s
+        anchors.verticalCenter: parent.verticalCenter
+        z: 0
+        visible: Flags.showGlyphs
+        text: "壁"
+        color: Theme.ghost
+        opacity: 0.55
+        font.family: Theme.fontJp
+        font.weight: Font.Medium
+        font.pixelSize: 30 * root.s
+    }
+
     GlyphIcon {
         anchors.left: parent.left
         anchors.leftMargin: 20 * root.s
         anchors.verticalCenter: parent.verticalCenter
         z: 0
+        visible: !Flags.showGlyphs
         width: 30 * root.s
         height: 30 * root.s
         name: "image"

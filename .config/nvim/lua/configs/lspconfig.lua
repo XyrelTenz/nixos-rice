@@ -14,6 +14,7 @@ vim.lsp.config("*", {
 local vue_plugin_path = os.getenv("VUE_PLUGIN_PATH") or "/usr/lib/node_modules/@vue/typescript-plugin"
 
 vim.lsp.config("ts_ls", {
+	cmd = { "typescript-language-server", "--stdio" },
 	filetypes = { "typescript", "javascript", "javascriptreact", "typescriptreact", "vue" },
 	init_options = {
 		plugins = {
@@ -39,7 +40,7 @@ vim.lsp.config("vue_ls", {
 	},
 })
 
-local servers = { "html", "cssls", "tailwindcss", "jdtls", "sqls", "gopls", "slint_lsp", "clangd" }
+local servers = { "html", "cssls", "tailwindcss", "jdtls", "sqls", "gopls", "slint_lsp", "clangd", "taplo" }
 
 for _, lsp in ipairs(servers) do
 	vim.lsp.config(lsp, {
@@ -124,6 +125,7 @@ vim.lsp.enable({
 	"clangd",
 	"nixd",
 	"qmlls",
+	"taplo",
 })
 
 require("telescope").load_extension("projects")

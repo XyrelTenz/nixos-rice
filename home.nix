@@ -1,7 +1,7 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, username, ... }:
 
 let
-  repoPath = "/home/xyreltenz/nixos-config/.config";
+  repoPath = "/home/${username}/nixos-config/.config";
   androidSdk = pkgs.androidenv.composeAndroidPackages {
     abiVersions = [ "x86_64" ];
     platformVersions = [ "34" ];
@@ -11,8 +11,8 @@ let
   };
 in
 {
-  home.username = "xyreltenz";
-  home.homeDirectory = "/home/xyreltenz";
+  home.username = username;
+  home.homeDirectory = "/home/${username}";
   home.stateVersion = "26.05";
 
   home.packages = [

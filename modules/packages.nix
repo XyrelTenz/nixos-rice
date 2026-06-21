@@ -3,6 +3,7 @@
   lib,
   pkgs,
   inputs,
+  username,
   ...
 }: let
   matugenPkg = inputs.matugen.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -99,7 +100,7 @@ in {
       '';
     })
     (writeShellScriptBin "rishot" ''
-      exec /home/xyreltenz/.config/rishot/bin/rishot "$@"
+      exec /home/${username}/.config/rishot/bin/rishot "$@"
     '')
   ];
 }

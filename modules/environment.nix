@@ -1,7 +1,7 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, username, timezone, ... }:
 
 {
-  time.timeZone = "Asia/Manila";
+  time.timeZone = timezone;
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
@@ -9,7 +9,7 @@
 
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";
-    HYPRLAND_CONFIG = "/home/xyreltenz/.config/hypr/hyprland.lua";
+    HYPRLAND_CONFIG = "/home/${username}/.config/hypr/hyprland.lua";
     QML2_IMPORT_PATH = "/run/current-system/sw/lib/qt-6/qml";
     QML_IMPORT_PATH  = "/run/current-system/sw/lib/qt-6/qml";
   };

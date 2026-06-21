@@ -33,10 +33,13 @@
     silentSDDM,
     nix-cachyos-kernel,
     ...
-  }: {
+  }: let
+    username = "xyreltenz";
+    timezone = "Asia/Manila";
+  in {
     nixosConfigurations.XyrelTenz = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
-      specialArgs = {inherit inputs;};
+      specialArgs = { inherit inputs username timezone; };
       modules = [
         silentSDDM.nixosModules.default
 
@@ -48,7 +51,8 @@
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.users.xyreltenz = import ./home.nix;
+          home-manager.extraSpecialArgs = { inherit inputs username; };
+          home-manager.users.${username} = import ./home.nix;
         }
 
         {

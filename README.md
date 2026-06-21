@@ -54,25 +54,15 @@ To apply changes to the system:
 
 ```bash
 cd ~/nixos-config
-sudo nixos-rebuild switch --flake .#XyrelTenz
-```
+sudo nixos-rebuild switch --flake .#username
 
-### 2. Installing Roblox (Sober)
-The flatpak service is configured automatically. Run the following user commands to install Sober:
-
-```bash
-# Add the flathub remote catalog
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# Install the Sober client
-flatpak install --user flathub org.vinegarhq.Sober
 ```
 
 ### 3. Keybindings
-- **Super + Return**: Open Ghostty
-- **Super + Space**: Launch App Launcher (Quickshell)
-- **Super + C**: Select wallpapers
+- **Super + T**: Open Ghostty
+- **Super + A**: Launch App Launcher (Quickshell)
+- **Super + W**: Select wallpapers
 - **Super + B**: Shuffle wallpaper
 - **Super + V**: Clipboard history
 - **Super + L**: Lock screen
-- **Print**: Capture screenshot (rishot)
+- **Super + S**: Capture screenshot (rishot)

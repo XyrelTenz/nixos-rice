@@ -52,10 +52,9 @@ vim.schedule(function()
 	require("mappings")
 end)
 
---- Register filetypes for custom extensions
+--- Add filetype for Slint files
 vim.filetype.add({
 	extension = {
 		slint = "slint",
-		qml = "qml",
 	},
 })

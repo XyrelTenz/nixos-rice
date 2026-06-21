@@ -1,6 +1,6 @@
 return {
 	"iamironz/android-nvim-plugin",
-	event = "VeryLazy",
+	lazy = false,
 	config = function()
 		require("android").setup()
 	end,

@@ -25,7 +25,10 @@
   security.pam.services.quickshell = {};
 
   # Hardware
-  hardware.graphics.enable = true;
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
   hardware.bluetooth.enable = true;
 
   # UPower daemon for battery tracking
@@ -36,4 +39,21 @@
     enable = true;
     extraPortals = [pkgs.xdg-desktop-portal-gtk];
   };
+
+  # GPU Screen Recorder setuid wrapper for KMS capture
+  programs.gpu-screen-recorder.enable = true;
+
+  # Flatpak
+  services.flatpak.enable = true;
+
+  # Steam
+  programs.steam = {
+    enable = true;
+    remotePlay.openFirewall = true;
+    dedicatedServer.openFirewall = true;
+    localNetworkGameTransfers.openFirewall = true;
+  };
+
+  # GameMode
+  programs.gamemode.enable = true;
 }

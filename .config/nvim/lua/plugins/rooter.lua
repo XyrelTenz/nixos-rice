@@ -1,6 +1,5 @@
 return {
 	"notjedi/nvim-rooter.lua",
-	event = { "BufReadPre", "BufNewFile" },
 	config = function()
 		require("nvim-rooter").setup({
 			update_cwd = true,

@@ -11,7 +11,6 @@ return {
 
 	{
 		"neovim/nvim-lspconfig",
-		event = { "BufReadPost", "BufNewFile" },
 		config = function()
 			require("configs.lspconfig")
 		end,
@@ -29,7 +28,7 @@ return {
 			prefer_startup_root = true,
 			filters = {
 				custom = { "node_modules", "target", "build", "dist", "out" },
-				dotfiles = false,
+				dotfiles = true,
 			},
 			on_attach = function(bufnr)
 				local api = require("nvim-tree.api")
@@ -44,7 +43,7 @@ return {
 			view = { adaptive_size = true, side = "left" },
 		},
 	},
-	-- Copilot
+	--- Copilot
 	{
 		"zbirenbaum/copilot.lua",
 		cmd = "Copilot",
@@ -92,13 +91,13 @@ return {
 	},
 
 	--- Code Action Ligh Bulb
-	{ "kosayoda/nvim-lightbulb", event = "LspAttach", priority = 1000, opts = { autocmd = { enabled = true } } },
+	-- { "kosayoda/nvim-lightbulb", lazy = false, priority = 1000, opts = { autocmd = { enabled = true } } },
 
 	{ import = "nvchad.blink.lazyspec" },
 	-- Auto Give Commit Messages
 	{
 		"ajatdarojat45/commitmate.nvim",
-		event = "VeryLazy",
+		lazy = false,
 		dependencies = {
 			"nvim-lua/plenary.nvim",
 			"CopilotC-Nvim/CopilotChat.nvim",
@@ -112,36 +111,22 @@ return {
 	},
 
 	-- Typer
-	{
-		"nvzone/typr",
-		dependencies = "nvzone/volt",
-		opts = {},
-		cmd = { "Typr", "TyprStats" },
-	},
+	-- {
+	-- 	"nvzone/typr",
+	-- 	dependencies = "nvzone/volt",
+	-- 	opts = {},
+	-- 	cmd = { "Typr", "TyprStats" },
+	-- },
 
 	--- Project for Rooter
 	{
 		"ahmedkhalf/project.nvim",
-		event = "VeryLazy",
+		lazy = false,
 		config = function()
 			require("project_nvim").setup({
 				detection_methods = { "lsp", "pattern" },
 				patterns = { ".git", "package.json", "pubspec.yaml", "build.gradle.kts", "module.yaml" },
 			})
-			local ok, telescope = pcall(require, "telescope")
-			if ok then
-				pcall(telescope.load_extension, "projects")
-			else
-				vim.api.nvim_create_autocmd("User", {
-					group = vim.api.nvim_create_augroup("ProjectTelescopeLazy", { clear = true }),
-					pattern = "LazyLoad",
-					callback = function(event)
-						if event.data == "telescope.nvim" then
-							pcall(require("telescope").load_extension, "projects")
-						end
-					end,
-				})
-			end
 		end,
 	},
 
@@ -203,15 +188,13 @@ return {
 				"tsx",
 				"svelte",
 				"vue",
+				"qml",
 			},
 		},
 	},
 	{
 		"nvim-telescope/telescope.nvim",
 		opts = {
-			defaults = {
-				file_ignore_patterns = { "node_modules", "%.git/" },
-			},
 			pickers = {
 				find_files = {
 					hidden = true,

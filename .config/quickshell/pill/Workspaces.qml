@@ -57,12 +57,6 @@ Item {
         void workspaces.width;
         return Qt.point(slotCenterX(Math.max(0, activeIndex)), height / 2);
     }
-    readonly property point hoverDotPoint: {
-        void workspaces.activeName;
-        void workspaces.width;
-        void workspaces.hoverIndex;
-        return Qt.point(slotCenterX(Math.max(0, hoverIndex)), height / 2);
-    }
 
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight

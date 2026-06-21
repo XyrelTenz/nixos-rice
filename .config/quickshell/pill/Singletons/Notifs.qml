@@ -6,7 +6,6 @@ import Quickshell.Services.Notifications
 Singleton {
     id: root
 
-    property bool dnd: false
     property var seenIds: ({})
     property var arrivalMs: ({})
     property var popups: []
@@ -90,18 +89,6 @@ Singleton {
             if (p.length) return p;
         }
         return "";
-    }
-
-    function dismissNotif(n) {
-        if (!n) return;
-        if (typeof n.dismiss === "function") {
-            var d = Object.assign({}, userDismissed);
-            d[n.id] = true;
-            root.userDismissed = d;
-            n.dismiss();
-        } else {
-            root.history = root.history.filter(function(h) { return h.id !== n.id; });
-        }
     }
 
     function dismissEntry(e) {
@@ -273,7 +260,7 @@ Singleton {
             n.tracked = true;
             root.hookClosed(n);
             var critical = n.urgency === NotificationUrgency.Critical;
-            if (!root.dnd || critical)
+            if (!Flags.dnd || critical)
                 root.popups = root.popups.concat([n]).slice(-3);
         }
     }

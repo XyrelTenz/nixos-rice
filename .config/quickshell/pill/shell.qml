@@ -43,11 +43,7 @@ ShellRoot {
         Devices.restore();
     }
 
-    Binding {
-        target: Notifs
-        property: "dnd"
-        value: Flags.dnd
-    }
+
 
     PanelWindow {
         id: inhibitWin
@@ -117,6 +113,7 @@ ShellRoot {
         function link(mon: string): void { root.toggleSurface(mon, "link"); }
         function battery(mon: string): void { root.toggleSurface(mon, "battery"); }
         function settings(mon: string): void { root.toggleSurface(mon, "settings"); }
+        function keybinds(mon: string): void { root.toggleSurface(mon, "keybinds"); }
         function recorder(mon: string): void { root.toggleSurface(mon, "recorder"); }
         function screenrec(mon: string): void { root.toggleSurface(mon, "recorder"); }
         function record(mon: string): void { root.toggleSurface(mon, "recorder"); }
@@ -151,7 +148,6 @@ ShellRoot {
         }
         function peek(mon: string): void { root.peek(mon); }
         function hide(): void { root.close(); }
-        function reload(): void { Quickshell.reload(true); }
     }
 
     Variants {
@@ -244,12 +240,17 @@ ShellRoot {
                 anchors.fill: parent
                 enabled: overlay.modal
                 acceptedButtons: Qt.AllButtons
-                onPressed: {
+                onPressed: (mouse) => {
                     if (pill.quickChoosing) {
                         ScreenRec.quickChoosing = false;
                         ScreenRec.quickScreenChoosing = false;
                     } else if (overlay.surfaceOpen) {
-                        root.close();
+                        var inside = mouse.x >= pillRegion.x && mouse.x <= pillRegion.x + pillRegion.width
+                            && mouse.y >= pillRegion.y && mouse.y <= pillRegion.y + pillRegion.height;
+                        if (!inside)
+                            root.close();
+                        else if (mouse.y <= pillRegion.y + 40 * pill.s)
+                            pill.surfaceBack();
                     } else {
                         pill.pinned = false;
                         root.peekMon = "";
@@ -269,25 +270,31 @@ ShellRoot {
                     if (pill.quickChoosing) {
                         ScreenRec.quickChoosing = false;
                         ScreenRec.quickScreenChoosing = false;
-                    } else if (!pill.linkBack()) {
+                    } else if (!pill.linkBack() && !pill.keybindsBack()) {
                         root.close();
                     }
                 }
-                Keys.onUpPressed: (e) => { e.accepted = pill.mixerStep(1) || pill.recorderStep(5) || pill.settingsMove(-1); }
-                Keys.onDownPressed: (e) => { e.accepted = pill.mixerStep(-1) || pill.recorderStep(-5) || pill.settingsMove(1); }
+                Keys.onUpPressed: (e) => {
+                    if (pill.keybindsOpen && !pill.keybindsListening) { pill.keybindsMove(-1); e.accepted = true; return; }
+                    e.accepted = pill.mixerStep(1) || pill.recorderStep(5) || pill.settingsMove(-1);
+                }
+                Keys.onDownPressed: (e) => {
+                    if (pill.keybindsOpen && !pill.keybindsListening) { pill.keybindsMove(1); e.accepted = true; return; }
+                    e.accepted = pill.mixerStep(-1) || pill.recorderStep(-5) || pill.settingsMove(1);
+                }
                 Keys.onLeftPressed: (e) => {
                     if (pill.mixerOpen) { pill.mixerFocusMove(-1); e.accepted = true; }
                     else if (pill.wallpaperOpen) { pill.wallpaperMove(-1); e.accepted = true; }
                     else if (pill.powerOpen) { pill.powerMove(-1); e.accepted = true; }
                     else if (pill.recorderOpen) { e.accepted = pill.recorderStep(-5); }
-                    else if (pill.settingsOpen) { pill.settingsAdjust(-1); e.accepted = true; }
+                    else if (pill.settingsLike) { pill.settingsAdjust(-1); e.accepted = true; }
                 }
                 Keys.onRightPressed: (e) => {
                     if (pill.mixerOpen) { pill.mixerFocusMove(1); e.accepted = true; }
                     else if (pill.wallpaperOpen) { pill.wallpaperMove(1); e.accepted = true; }
                     else if (pill.powerOpen) { pill.powerMove(1); e.accepted = true; }
                     else if (pill.recorderOpen) { e.accepted = pill.recorderStep(5); }
-                    else if (pill.settingsOpen) { pill.settingsAdjust(1); e.accepted = true; }
+                    else if (pill.settingsLike) { pill.settingsAdjust(1); e.accepted = true; }
                 }
 
                 /**
@@ -298,6 +305,12 @@ ShellRoot {
                  * is swallowed for everything else so a held key never re-fires.
                  */
                 Keys.onPressed: (e) => {
+                    if (pill.wallpaperOpen && !pill.wallpaperSearching
+                        && e.text.length === 1 && e.text > " ") {
+                        pill.wallpaperType(e.text);
+                        e.accepted = true;
+                        return;
+                    }
                     if (e.key !== Qt.Key_Return && e.key !== Qt.Key_Enter && e.key !== Qt.Key_Space)
                         return;
                     if (pill.wallpaperOpen) {
@@ -306,8 +319,11 @@ ShellRoot {
                     } else if (pill.powerOpen) {
                         if (!e.isAutoRepeat) pill.powerPress();
                         e.accepted = true;
-                    } else if (pill.settingsOpen) {
+                    } else if (pill.settingsLike) {
                         if (!e.isAutoRepeat) pill.settingsActivate();
+                        e.accepted = true;
+                    } else if (pill.keybindsOpen && !pill.keybindsListening) {
+                        if (!e.isAutoRepeat) pill.keybindsActivate();
                         e.accepted = true;
                     }
                 }
@@ -362,6 +378,14 @@ ShellRoot {
                 target: pill
                 function onQuickChoosingChanged() {
                     if (pill.quickChoosing)
+                        focusScope.forceActiveFocus();
+                }
+                function onWallpaperSearchingChanged() {
+                    if (!pill.wallpaperSearching && overlay.surfaceOpen)
+                        focusScope.forceActiveFocus();
+                }
+                function onKeybindsListeningChanged() {
+                    if (!pill.keybindsListening && overlay.surfaceOpen)
                         focusScope.forceActiveFocus();
                 }
             }

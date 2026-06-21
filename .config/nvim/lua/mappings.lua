@@ -2,6 +2,7 @@ require("nvchad.mappings")
 local map = vim.keymap.set
 map("n", ";", ":", { desc = "CMD enter command mode" })
 map("i", "jk", "<ESC>")
+map("n", "gd", vim.lsp.buf.definition)
 
 -- Code Action map("n", "<leader>ca", function()
 --   vim.lsp.buf.code_action()

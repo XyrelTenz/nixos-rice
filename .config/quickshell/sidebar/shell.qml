@@ -28,11 +28,7 @@ ShellRoot {
         }
     }
 
-    Binding {
-        target: Notifs
-        property: "dnd"
-        value: Flags.dnd
-    }
+
 
     PanelWindow {
         id: inhibitWin

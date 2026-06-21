@@ -12,8 +12,7 @@ import "Singletons"
  * 繋 LINK surface: connectivity rows (auto-detected Netz, Bluetooth) over the
  * 報 INBOX notification center, with WLAN and Bluetooth drill-in subviews that
  * cross-fade in place. Owns the `subview` state machine and exposes
- * `desiredW`, `emberX`/`emberY` (flame dock point beside the 報 marker) and
- * `back()` for the pill's morph and Escape plumbing. Opening marks all
+ * `desiredW` and `back()` for the pill's morph and Escape plumbing. Opening marks all
  * notifications seen after a short beat so unread embers register first.
  */
 PillSurface {
@@ -34,16 +33,6 @@ PillSurface {
     property string initialView: "main"
 
     readonly property real desiredW: (subview === "wifi" ? 272 : subview === "bt" ? 286 : 330) * s
-
-    readonly property point emberPoint: {
-        void root.width;
-        void root.height;
-        void mainCol.implicitHeight;
-        void root.subview;
-        return emberAnchor.mapToItem(root, emberAnchor.width / 2, emberAnchor.height / 2);
-    }
-    readonly property real emberX: emberPoint.x
-    readonly property real emberY: emberPoint.y
 
     /**
      * Row-soul focus registry. Each hoverable row reports itself here; the bead
@@ -631,7 +620,6 @@ PillSurface {
                     spacing: 6 * root.s
 
                     Item {
-                        id: emberAnchor
                         anchors.verticalCenter: parent.verticalCenter
                         width: 10 * root.s
                         height: 10 * root.s

@@ -32,6 +32,10 @@ Singleton {
 
         onFileChanged: reload()
         onAdapterUpdated: writeAdapter()
+        onLoadFailed: function(error) {
+            if (error === FileViewError.FileNotFound)
+                writeAdapter();
+        }
 
         JsonAdapter {
             id: adapter
@@ -41,6 +45,7 @@ Singleton {
             property bool clockSeconds: false
             property bool showGlyphs: true
             property bool dynamicPalette: false
+            property string uiFont: ""
             property int recordCountdown: 5
             property string recordDir: ""
             property int recordFps: 60
@@ -51,7 +56,4 @@ Singleton {
             property real recordClearedBefore: 0
         }
     }
-
-    Component.onCompleted: if (!file.loaded)
-        file.writeAdapter()
 }

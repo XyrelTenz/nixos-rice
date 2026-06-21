@@ -41,8 +41,15 @@ Item {
     readonly property bool linkOpen: surface === "link"
     readonly property bool batteryOpen: surface === "battery"
     readonly property bool settingsOpen: surface === "settings"
+    readonly property bool keybindsOpen: surface === "keybinds"
     readonly property bool recorderOpen: surface === "recorder"
     readonly property bool sysmonOpen: surface === "sysmon"
+    readonly property bool appearanceOpen: surface === "appearance"
+    readonly property bool recordingOpen: surface === "recording"
+    readonly property bool updatesOpen: surface === "updates"
+    readonly property bool displayOpen: surface === "display"
+    readonly property bool fontpickerOpen: surface === "fontpicker"
+    readonly property bool settingsLike: settingsOpen || appearanceOpen || recordingOpen || updatesOpen
     readonly property bool hasMedia: Mpris.players.values.length > 0
 
     /**
@@ -96,8 +103,14 @@ Item {
     readonly property real mediaH: 150 * s
     readonly property real batteryW: 316 * s
     readonly property real settingsW: 392 * s
+    readonly property real keybindsW: 460 * s
     readonly property real recorderW: 384 * s
     readonly property real sysmonW: 392 * s
+    readonly property real appearanceW: 392 * s
+    readonly property real recordingW: 360 * s
+    readonly property real updatesW: 360 * s
+    readonly property real displayW: 392 * s
+    readonly property real fontpickerW: 360 * s
     readonly property real toastW: 342 * s
     readonly property real quickChooseW: 344 * s
     readonly property real quickChooseH: 76 * s
@@ -126,8 +139,14 @@ Item {
         link:      { size: () => Qt.size(link.desiredW, link.implicitHeight + 26 * s), ame: link },
         battery:   { size: () => Qt.size(batteryW, battery.implicitHeight + 26 * s), ame: battery },
         settings:  { size: () => Qt.size(settingsW, settings.implicitHeight + 29 * s), ame: settings },
+        keybinds:  { size: () => Qt.size(keybindsW, keybinds.implicitHeight + 29 * s), ame: keybinds },
         recorder:  { size: () => Qt.size(recorderW, recorder.implicitHeight + 33 * s), ame: recorder },
-        sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon }
+        sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon },
+        appearance: { size: () => Qt.size(appearanceW, appearance.implicitHeight + 29 * s), ame: appearance },
+        recording:  { size: () => Qt.size(recordingW, recording.implicitHeight + 29 * s), ame: recording },
+        updates:    { size: () => Qt.size(updatesW, updates.implicitHeight + 29 * s), ame: updates },
+        display:    { size: () => Qt.size(displayW, display.implicitHeight + 29 * s), ame: display },
+        fontpicker: { size: () => Qt.size(fontpickerW, fontpicker.implicitHeight + 29 * s), ame: fontpicker }
     })
 
     readonly property string mode: surfaceOpen && surfaces[surface] !== undefined ? surface
@@ -166,14 +185,29 @@ Item {
     }
 
     /**
-     * Move the open settings surface's keyboard row focus by `dir` (+1 down, -1
-     * up), carrying the soul seam. Returns true when settings is open and
-     * consumed the step.
+     * Resolve which settings-family surface owns keyboard row navigation right
+     * now: the category index or one of its morphing sub-surfaces. Returns null
+     * when none of them is open.
+     */
+    function rowNavSurface() {
+        if (pill.settingsOpen)
+            return settings;
+        if (pill.appearanceOpen)
+            return appearance;
+        if (pill.recordingOpen)
+            return recording;
+        return null;
+    }
+
+    /**
+     * Move the focused settings row by `dir` (+1 down, -1 up), carrying the soul
+     * seam. Returns true when a settings-family surface is open and consumed it.
      */
     function settingsMove(dir) {
-        if (!pill.settingsOpen)
+        var nav = pill.rowNavSurface();
+        if (!nav)
             return false;
-        settings.kbMove(dir);
+        nav.kbMove(dir);
         return true;
     }
 
@@ -182,22 +216,44 @@ Item {
      * `dir`, a toggle is set on (dir > 0) or off. Returns true when consumed.
      */
     function settingsAdjust(dir) {
-        if (!pill.settingsOpen)
+        var nav = pill.rowNavSurface();
+        if (!nav)
             return false;
-        settings.kbAdjust(dir);
+        nav.kbAdjust(dir);
         return true;
     }
 
     /**
-     * Flip the focused settings row when it is a toggle. Returns true when
-     * settings is open.
+     * Activate the focused settings row: a toggle flips, a nav row opens its
+     * sub-surface. Returns true when a settings-family surface is open.
      */
     function settingsActivate() {
-        if (!pill.settingsOpen)
+        var nav = pill.rowNavSurface();
+        if (!nav)
             return false;
-        settings.kbActivate();
+        nav.kbActivate();
         return true;
     }
+
+    /**
+     * Slide the open keybinds list's focused row by `dir` (+1 down, -1 up),
+     * carrying the soul seam. No-op unless the keybinds surface is open.
+     */
+    function keybindsMove(dir) {
+        if (pill.keybindsOpen)
+            keybinds.move(dir);
+    }
+
+    /**
+     * Enter on the open keybinds surface: arm chord capture on the focused row.
+     * No-op unless the keybinds surface is open.
+     */
+    function keybindsActivate() {
+        if (pill.keybindsOpen)
+            keybinds.activate();
+    }
+
+    readonly property bool keybindsListening: pill.keybindsOpen && keybinds.listening
 
     /**
      * A tile was picked in the standalone quick-record chooser. Screen with several
@@ -234,6 +290,43 @@ Item {
     }
 
     /**
+     * Step the open surface back one level when its header bar is clicked: a
+     * settings sub-surface returns to the index, the font picker to appearance,
+     * a keybinds form to its list, and any other surface dismisses to the hover
+     * pill. Empty space in the body never triggers this.
+     */
+    function surfaceBack() {
+        if (pill.keybindsOpen) {
+            if (keybinds.formOpen)
+                keybinds.closeForm();
+            else
+                pill.requestSurface("settings");
+            return;
+        }
+        if (pill.fontpickerOpen) {
+            pill.requestSurface("appearance");
+            return;
+        }
+        if (pill.appearanceOpen || pill.recordingOpen || pill.updatesOpen || pill.displayOpen) {
+            pill.requestSurface("settings");
+            return;
+        }
+        pill.requestClose();
+    }
+
+    /**
+     * Pop the open keybinds editor form back to the bind list. Returns true when a
+     * form was open and dismissed, false otherwise so Escape closes the surface.
+     */
+    function keybindsBack() {
+        if (pill.keybindsOpen && keybinds.formOpen) {
+            keybinds.closeForm();
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Slide the open wallpaper strip's focus by `dir` thumbs; +1 is right (older)
      * and -1 is left (newer). No-op unless the wallpaper surface is open.
      */
@@ -250,6 +343,18 @@ Item {
     function wallpaperActivate() {
         if (pill.wallpaperOpen)
             wall.activate();
+    }
+
+    readonly property bool wallpaperSearching: pill.wallpaperOpen && wall.searching
+
+    /**
+     * Route the first printable keystroke over the open wallpaper strip into a
+     * DuckDuckGo search seeded with that character. No-op unless the wallpaper
+     * surface is open.
+     */
+    function wallpaperType(ch) {
+        if (pill.wallpaperOpen)
+            wall.startSearch(ch);
     }
 
     /**
@@ -929,31 +1034,6 @@ Item {
                 }
 
                 Item {
-                    id: powerIcon
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 17 * pill.s
-                    height: 17 * pill.s
-
-                    GlyphIcon {
-                        anchors.fill: parent
-                        name: "shutdown"
-                        color: powerArea.containsMouse ? Theme.cream : Theme.iconDim
-                        stroke: 1.7
-                    }
-
-                    MouseArea {
-                        id: powerArea
-                        anchors.fill: parent
-                        anchors.margins: -6 * pill.s
-                        hoverEnabled: true
-                        enabled: hover.live
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: pill.requestSurface("power")
-                        onContainsMouseChanged: if (containsMouse) pill.soulTarget = "power"
-                    }
-                }
-
-                Item {
                     id: sysmonIcon
                     anchors.verticalCenter: parent.verticalCenter
                     width: 17 * pill.s
@@ -1055,6 +1135,31 @@ Item {
                         onContainsMouseChanged: if (containsMouse) pill.soulTarget = "settings"
                     }
                 }
+
+                Item {
+                    id: powerIcon
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 17 * pill.s
+                    height: 17 * pill.s
+
+                    GlyphIcon {
+                        anchors.fill: parent
+                        name: "shutdown"
+                        color: powerArea.containsMouse ? Theme.cream : Theme.iconDim
+                        stroke: 1.7
+                    }
+
+                    MouseArea {
+                        id: powerArea
+                        anchors.fill: parent
+                        anchors.margins: -6 * pill.s
+                        hoverEnabled: true
+                        enabled: hover.live
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: pill.requestSurface("power")
+                        onContainsMouseChanged: if (containsMouse) pill.soulTarget = "power"
+                    }
+                }
             }
         }
     }
@@ -1138,6 +1243,16 @@ Item {
         open: pill.settingsOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Keybinds {
+        id: keybinds
+        s: pill.s
+        open: pill.keybindsOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
     }
 
     Recorder {
@@ -1155,6 +1270,51 @@ Item {
         open: pill.sysmonOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
+    }
+
+    Appearance {
+        id: appearance
+        s: pill.s
+        open: pill.appearanceOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Recording {
+        id: recording
+        s: pill.s
+        open: pill.recordingOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Updates {
+        id: updates
+        s: pill.s
+        open: pill.updatesOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Display {
+        id: display
+        s: pill.s
+        open: pill.displayOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    FontPicker {
+        id: fontpicker
+        s: pill.s
+        open: pill.fontpickerOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
     }
 
     Osd {

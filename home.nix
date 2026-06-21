@@ -41,6 +41,7 @@ in
     _linkConfig "fish"                "fish"
     _linkConfig "matugen"             "matugen"
     _linkConfig "brave-theme"          "brave-theme"
+    _linkConfig "rishot"               "rishot"
 
     # Starship config lives at ~/.config/starship.toml
     ln -sfn "${repoPath}/starship.toml" "$HOME/.config/starship.toml"

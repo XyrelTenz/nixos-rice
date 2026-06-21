@@ -6,30 +6,12 @@
   ...
 }: let
   matugenPkg = inputs.matugen.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  neovim-11 = inputs.nixpkgs-neovim-11.legacyPackages.${pkgs.stdenv.hostPlatform.system}.neovim;
-  img2art = pkgs.python3.pkgs.buildPythonApplication rec {
-    pname = "img2art";
-    version = "0.4.3";
-    format = "wheel";
-    src = pkgs.fetchurl {
-      url = "https://files.pythonhosted.org/packages/14/4b/b62b1646a4908df80968ff31383c01412e8c17ecf6a343762d072f20600d/img2art-0.4.3-py3-none-any.whl";
-      sha256 = "sha256-N47r/GbBAbJJoeYnmtNgR3hbdpq/hrMyC1i/Eb8WYiU=";
-    };
-    propagatedBuildInputs = with pkgs.python3.pkgs; [
-      numpy
-      opencv4
-      typer
-      typing-extensions
-    ];
-    pythonRemoveDeps = [ "opencv-python" ];
-    pythonRelaxDeps = [ "typer" ];
-    doCheck = false;
-  };
 in {
   environment.systemPackages = with pkgs; [
     wget
     git
     ghostty
+    kitty
     fastfetch
     unzip
     go
@@ -43,8 +25,10 @@ in {
     kdePackages.dolphin
     kdePackages.qtsvg
     brave
+    mangohud
+    protonup-qt
 
-    neovim-11
+    neovim
     android-tools
     android-studio
     tree-sitter
@@ -99,7 +83,6 @@ in {
     cliphist
     imagemagick
     jq
-    img2art
     vlc
     ddcutil
     gpu-screen-recorder
@@ -115,5 +98,8 @@ in {
           --prefix QT_PLUGIN_PATH : "${kdePackages.qtimageformats}/lib/qt-6/plugins"
       '';
     })
+    (writeShellScriptBin "rishot" ''
+      exec /home/xyreltenz/.config/rishot/bin/rishot "$@"
+    '')
   ];
 }

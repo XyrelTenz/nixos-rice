@@ -258,12 +258,8 @@ return {
 				group = augroup("start"),
 				pattern = "MiniFilesExplorerOpen",
 				callback = function()
-					vim.schedule(function()
-						local bufnr = vim.api.nvim_get_current_buf()
-						if vim.api.nvim_buf_is_valid(bufnr) then
-							updateGitStatus(bufnr)
-						end
-					end)
+					local bufnr = vim.api.nvim_get_current_buf()
+					updateGitStatus(bufnr)
 				end,
 			})
 

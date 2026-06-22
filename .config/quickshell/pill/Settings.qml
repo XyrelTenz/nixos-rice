@@ -8,7 +8,7 @@ import "Singletons"
  * Each row carries its kanji, name and caption, and morphs the pill into that
  * category's sub-surface. Arrow keys move the focused row with the glowing seam
  * and Return opens it. The Shell group holds Appearance and Display; the Control
- * group holds Keybinds, Recording and Updates.
+ * group holds Keybinds and Updates.
  */
 SettingsSurface {
     id: root
@@ -17,9 +17,11 @@ SettingsSurface {
 
     rows: [
         { item: appearanceRow, kind: "nav", surface: "appearance" },
+        { item: lookRow, kind: "nav", surface: "look" },
         { item: displayRow, kind: "nav", surface: "display" },
+        { item: inputRow, kind: "nav", surface: "input" },
         { item: keybindsRow, kind: "nav", surface: "keybinds" },
-        { item: recordingRow, kind: "nav", surface: "recording" },
+        { item: idleRow, kind: "nav", surface: "idlelock" },
         { item: updatesRow, kind: "nav", surface: "updates" }
     ]
 
@@ -52,7 +54,8 @@ SettingsSurface {
         SettingsRow {
             id: appearanceRow
             surface: root
-            glyph: "相"
+            captionOnFocus: true
+            icon: "sparkles"
             name: "Appearance"
             sub: "Clock, glyphs, accent palette"
 
@@ -66,9 +69,27 @@ SettingsSurface {
         }
 
         SettingsRow {
+            id: lookRow
+            surface: root
+            captionOnFocus: true
+            icon: "app-window"
+            name: "Look"
+            sub: "Gaps, rounding, blur, opacity"
+
+            GlyphIcon {
+                width: 16 * root.s
+                height: 16 * root.s
+                name: "chevron-right"
+                color: root.focusRowItem === lookRow ? Theme.cream : Theme.iconDim
+                stroke: 2.2
+            }
+        }
+
+        SettingsRow {
             id: displayRow
             surface: root
-            glyph: "画"
+            captionOnFocus: true
+            icon: "monitor"
             name: "Display"
             sub: "Resolution, refresh, scale"
 
@@ -77,6 +98,23 @@ SettingsSurface {
                 height: 16 * root.s
                 name: "chevron-right"
                 color: root.focusRowItem === displayRow ? Theme.cream : Theme.iconDim
+                stroke: 2.2
+            }
+        }
+
+        SettingsRow {
+            id: inputRow
+            surface: root
+            captionOnFocus: true
+            icon: "mouse"
+            name: "Input"
+            sub: "Pointer, keyboard, cursor"
+
+            GlyphIcon {
+                width: 16 * root.s
+                height: 16 * root.s
+                name: "chevron-right"
+                color: root.focusRowItem === inputRow ? Theme.cream : Theme.iconDim
                 stroke: 2.2
             }
         }
@@ -97,7 +135,8 @@ SettingsSurface {
         SettingsRow {
             id: keybindsRow
             surface: root
-            glyph: "鍵"
+            captionOnFocus: true
+            icon: "keyboard"
             name: "Keybinds"
             sub: "Rebind, add, set commands"
 
@@ -111,17 +150,18 @@ SettingsSurface {
         }
 
         SettingsRow {
-            id: recordingRow
+            id: idleRow
             surface: root
-            glyph: "録"
-            name: "Recording"
-            sub: "Capture countdown"
+            captionOnFocus: true
+            icon: "lock"
+            name: "Idle / Lock"
+            sub: "Auto-lock, screen off, suspend"
 
             GlyphIcon {
                 width: 16 * root.s
                 height: 16 * root.s
                 name: "chevron-right"
-                color: root.focusRowItem === recordingRow ? Theme.cream : Theme.iconDim
+                color: root.focusRowItem === idleRow ? Theme.cream : Theme.iconDim
                 stroke: 2.2
             }
         }
@@ -129,7 +169,8 @@ SettingsSurface {
         SettingsRow {
             id: updatesRow
             surface: root
-            glyph: "更"
+            captionOnFocus: true
+            icon: "download"
             name: "Updates"
             sub: "Version and check for updates"
             last: true

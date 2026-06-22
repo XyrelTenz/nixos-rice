@@ -32,24 +32,6 @@ Singleton {
     readonly property string iconDim: adapter.icon_dim
     readonly property string tickRest: adapter.tick_rest
 
-    // Base16 colors
-    readonly property string base00: adapter.base00
-    readonly property string base01: adapter.base01
-    readonly property string base02: adapter.base02
-    readonly property string base03: adapter.base03
-    readonly property string base04: adapter.base04
-    readonly property string base05: adapter.base05
-    readonly property string base06: adapter.base06
-    readonly property string base07: adapter.base07
-    readonly property string base08: adapter.base08
-    readonly property string base09: adapter.base09
-    readonly property string base0a: adapter.base0a
-    readonly property string base0b: adapter.base0b
-    readonly property string base0c: adapter.base0c
-    readonly property string base0d: adapter.base0d
-    readonly property string base0e: adapter.base0e
-    readonly property string base0f: adapter.base0f
-
     FileView {
         id: file
         path: (Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/ricelin/colors.json"
@@ -78,24 +60,6 @@ Singleton {
             property string faint: "#6f635b"
             property string icon_dim: "#cdbfb4"
             property string tick_rest: "#cbb6a3"
-
-            // Base16 colors fallbacks
-            property string base00: "#181818"
-            property string base01: "#313131"
-            property string base02: "#494949"
-            property string base03: "#767676"
-            property string base04: "#929292"
-            property string base05: "#a6a6a6"
-            property string base06: "#c3c3c3"
-            property string base07: "#ffffff"
-            property string base08: "#c0442b"
-            property string base09: "#e0563b"
-            property string base0a: "#eeb440"
-            property string base0b: "#8ba747"
-            property string base0c: "#5fa8a3"
-            property string base0d: "#4890c0"
-            property string base0e: "#a87fa8"
-            property string base0f: "#a3371f"
         }
     }
 }

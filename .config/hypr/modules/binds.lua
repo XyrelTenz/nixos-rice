@@ -16,6 +16,9 @@ hl.bind(mod .. " + Right", hl.dsp.focus({ workspace = "r+1" }))
 hl.bind(mod .. " + mouse_up", hl.dsp.focus({ workspace = "r-1" }))
 hl.bind(mod .. " + mouse_down", hl.dsp.focus({ workspace = "r+1" }))
 
+hl.bind(mod .. " + SHIFT + Left",  hl.dsp.exec_cmd("hyprctl dispatch resizeactive -20 0"), { repeating = true })
+hl.bind(mod .. " + SHIFT + Right", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 20 0"),  { repeating = true })
+
 hl.bind(mod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a"))
 
 hl.bind(mod .. " + A", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/open-surface.sh launcher"))

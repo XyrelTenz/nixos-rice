@@ -36,37 +36,19 @@ vim.lsp.config("vue_ls", {
 
 local servers = { "html", "cssls", "tailwindcss", "luals", "jdtls", "sqls", "gopls", "dartls", "slint_lsp" }
 
-for _, lsp in ipairs(servers) do
-	vim.lsp.config(lsp, {})
-end
-
--- vim.lsp.config.kotlin_ls = {
--- 	cmd = { "kotlin-lsp" },
--- 	on_attach = nvlsp.on_attach,
--- 	capabilities = nvlsp.capabilities,
--- 	on_init = nvlsp.on_init,
--- 	root_dir = vim.fs.root(
--- 		0,
--- 		{ "settings.gradle.kts", "build.gradle.kts", "settings.gradle", "build.gradle", ".git", "module.yaml" }
--- 	),
--- 	settings = {
--- 		intellij = {
--- 			buildTool = "gradle",
--- 		},
--- 	},
--- }
-
 vim.lsp.config("rust_analyzer", {
 	cmd = { "rust-analyzer" },
 
 	root_dir = function(filepath)
 		local is_flutter_project = vim.fs.root(filepath, "pubspec.yaml")
 
+		local root
 		if is_flutter_project then
-			return vim.fs.root(filepath, { "Cargo.toml", "rust-project.json" })
+			root = vim.fs.root(filepath, { "Cargo.toml", "rust-project.json" })
 		else
-			return vim.fs.root(filepath, { "Cargo.toml", "rust-project.json", ".git" })
+			root = vim.fs.root(filepath, { "Cargo.toml", "rust-project.json", ".git" })
 		end
+		return root or vim.fs.dirname(filepath)
 	end,
 
 	settings = {

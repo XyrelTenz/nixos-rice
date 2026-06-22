@@ -114,10 +114,12 @@ PillSurface {
         Row {
             id: bigRow
             anchors.centerIn: parent
+            /** Ring gap is at the bottom, so its optical middle sits above the hole centre; lift the value there. */
+            anchors.verticalCenterOffset: -12 * root.s
             spacing: 1 * root.s
 
             Text {
-                anchors.baseline: parent.baseline
+                id: bigText
                 text: dial.big
                 color: Theme.cream
                 font.family: Theme.font
@@ -127,7 +129,7 @@ PillSurface {
                 font.features: { "tnum": 1 }
             }
             Text {
-                anchors.baseline: parent.baseline
+                anchors.baseline: bigText.baseline
                 visible: dial.unit.length > 0
                 text: dial.unit
                 color: Theme.subtle

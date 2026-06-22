@@ -22,6 +22,7 @@ if status is-interactive
     end
 
     # ── Environment ───────────────────────────────────────────────────
+    fish_add_path ~/.cargo/bin
     set -x EDITOR nvim
     set -x VISUAL nvim
 end

@@ -18,6 +18,7 @@ in {
     go
     python3
     fish
+    discord
     starship
     ripgrep
     wf-recorder
@@ -39,8 +40,8 @@ in {
     ninja
     cmake
     pkg-config
-    cargo
-    rustc
+    rustup
+    just
 
     clang-tools
     typescript
@@ -88,6 +89,8 @@ in {
     ddcutil
     gpu-screen-recorder
     ffmpeg
+    hypridle
+    playerctl
     (symlinkJoin {
       name = "quickshell-wrapped";
       paths = [quickshell];

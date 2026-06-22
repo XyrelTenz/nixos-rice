@@ -17,4 +17,41 @@
   # Registers fish in /etc/shells so it can be used as a login shell
   programs.fish.enable = true;
   programs.zoxide.enable = true;
+
+  # Enable nix-ld to run unpatched dynamic binaries downloaded by rustup
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+    stdenv.cc.cc
+    zlib
+    fuse3
+    alsa-lib
+    at-spi2-core
+    dbus
+    glib
+    gtk3
+    libGL
+    libappindicator-gtk3
+    libnotify
+    libxcb
+    libxkbcommon
+    mesa
+    nspr
+    nss
+    pango
+    pipewire
+    systemd
+    icu
+    openssl
+    libX11
+    libXcursor
+    libXdamage
+    libXext
+    libXfixes
+    libXi
+    libXrandr
+    libXrender
+    libXtst
+    libxcb
+    libxshmfence
+  ];
 }

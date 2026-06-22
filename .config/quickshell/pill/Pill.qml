@@ -45,11 +45,13 @@ Item {
     readonly property bool recorderOpen: surface === "recorder"
     readonly property bool sysmonOpen: surface === "sysmon"
     readonly property bool appearanceOpen: surface === "appearance"
-    readonly property bool recordingOpen: surface === "recording"
     readonly property bool updatesOpen: surface === "updates"
     readonly property bool displayOpen: surface === "display"
+    readonly property bool inputOpen: surface === "input"
+    readonly property bool lookOpen: surface === "look"
+    readonly property bool idlelockOpen: surface === "idlelock"
     readonly property bool fontpickerOpen: surface === "fontpicker"
-    readonly property bool settingsLike: settingsOpen || appearanceOpen || recordingOpen || updatesOpen
+    readonly property bool settingsLike: settingsOpen || appearanceOpen || updatesOpen
     readonly property bool hasMedia: Mpris.players.values.length > 0
 
     /**
@@ -89,7 +91,7 @@ Item {
     readonly property real hoverH: 58 * s
     readonly property real mixerW: 93 * Math.max(4, mixer.faderCount) * s
     readonly property real mixerH: 214 * s
-    readonly property real calendarW: 318 * s
+    readonly property real calendarW: (calendar.implicitWidth > 0 ? calendar.implicitWidth : 282 * s) + 36 * s
     readonly property real calendarH: calendar.implicitHeight + 32 * s
     readonly property real launcherW: 360 * s
     readonly property real launcherH: 332 * s
@@ -107,9 +109,11 @@ Item {
     readonly property real recorderW: 384 * s
     readonly property real sysmonW: 392 * s
     readonly property real appearanceW: 392 * s
-    readonly property real recordingW: 360 * s
     readonly property real updatesW: 360 * s
     readonly property real displayW: 392 * s
+    readonly property real inputW: 392 * s
+    readonly property real lookW: 392 * s
+    readonly property real idlelockW: 392 * s
     readonly property real fontpickerW: 360 * s
     readonly property real toastW: 342 * s
     readonly property real quickChooseW: 344 * s
@@ -143,9 +147,11 @@ Item {
         recorder:  { size: () => Qt.size(recorderW, recorder.implicitHeight + 33 * s), ame: recorder },
         sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon },
         appearance: { size: () => Qt.size(appearanceW, appearance.implicitHeight + 29 * s), ame: appearance },
-        recording:  { size: () => Qt.size(recordingW, recording.implicitHeight + 29 * s), ame: recording },
         updates:    { size: () => Qt.size(updatesW, updates.implicitHeight + 29 * s), ame: updates },
         display:    { size: () => Qt.size(displayW, display.implicitHeight + 29 * s), ame: display },
+        input:      { size: () => Qt.size(inputW, input.implicitHeight + 29 * s), ame: input },
+        look:       { size: () => Qt.size(lookW, look.implicitHeight + 29 * s), ame: look },
+        idlelock:   { size: () => Qt.size(idlelockW, idlelock.implicitHeight + 29 * s), ame: idlelock },
         fontpicker: { size: () => Qt.size(fontpickerW, fontpicker.implicitHeight + 29 * s), ame: fontpicker }
     })
 
@@ -194,8 +200,6 @@ Item {
             return settings;
         if (pill.appearanceOpen)
             return appearance;
-        if (pill.recordingOpen)
-            return recording;
         return null;
     }
 
@@ -307,7 +311,7 @@ Item {
             pill.requestSurface("appearance");
             return;
         }
-        if (pill.appearanceOpen || pill.recordingOpen || pill.updatesOpen || pill.displayOpen) {
+        if (pill.appearanceOpen || pill.updatesOpen || pill.displayOpen || pill.inputOpen || pill.lookOpen || pill.idlelockOpen) {
             pill.requestSurface("settings");
             return;
         }
@@ -493,8 +497,8 @@ Item {
         border.width: 1
         border.color: Theme.border
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.cardTop }
-            GradientStop { position: 1.0; color: Theme.cardBot }
+            GradientStop { position: 0.0; color: Qt.alpha(Theme.cardTop, Flags.pillOpacity) }
+            GradientStop { position: 1.0; color: Qt.alpha(Theme.cardBot, Flags.pillOpacity) }
         }
         Behavior on budR { NumberAnimation { duration: Motion.fast; easing.type: Motion.easeStandard } }
         Behavior on opacity { NumberAnimation { duration: Motion.standard } }
@@ -544,8 +548,8 @@ Item {
         border.width: 1
         border.color: Theme.border
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.cardTop }
-            GradientStop { position: 1.0; color: Theme.cardBot }
+            GradientStop { position: 0.0; color: Qt.alpha(Theme.cardTop, Flags.pillOpacity) }
+            GradientStop { position: 1.0; color: Qt.alpha(Theme.cardBot, Flags.pillOpacity) }
         }
 
         layer.enabled: true
@@ -821,6 +825,41 @@ Item {
                 id: statusRow
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 12 * pill.s
+
+                Row {
+                    id: weatherGlance
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Weather.ready
+                    spacing: 5 * pill.s
+
+                    HoverHandler {
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: hover.live
+                    }
+                    TapHandler {
+                        enabled: hover.live
+                        onTapped: pill.requestSurface("calendar")
+                    }
+
+                    GlyphIcon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 16 * pill.s
+                        height: 16 * pill.s
+                        name: Weather.glyphFor(Weather.codeNow, Weather.isDay)
+                        color: Theme.subtle
+                        stroke: 1.8
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Weather.tempNow + "°"
+                        color: Theme.subtle
+                        font.family: Theme.font
+                        font.pixelSize: 12.5 * pill.s
+                        font.weight: Font.Medium
+                        font.features: { "tnum": 1 }
+                    }
+                }
 
                 MinimizedTray {
                     id: minimized
@@ -1281,15 +1320,6 @@ Item {
         onRequestSurface: (name) => pill.requestSurface(name)
     }
 
-    Recording {
-        id: recording
-        s: pill.s
-        open: pill.recordingOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
-    }
-
     Updates {
         id: updates
         s: pill.s
@@ -1303,6 +1333,33 @@ Item {
         id: display
         s: pill.s
         open: pill.displayOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Input {
+        id: input
+        s: pill.s
+        open: pill.inputOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Look {
+        id: look
+        s: pill.s
+        open: pill.lookOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    IdleLock {
+        id: idlelock
+        s: pill.s
+        open: pill.idlelockOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
         onRequestSurface: (name) => pill.requestSurface(name)
@@ -1325,6 +1382,7 @@ Item {
         anchors.rightMargin: 18 * pill.s
         anchors.bottomMargin: 12 * pill.s
         s: pill.s
+        screenName: pill.screenName
         suppressed: pill.surfaceOpen || pill.held
         enabled: pill.mode === "osd"
         opacity: pill.mode === "osd" ? 1 : 0

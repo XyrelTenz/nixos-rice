@@ -84,7 +84,7 @@ Singleton {
 
     Process {
         id: listProc
-        command: ["sh", "-c", "find \"$1\" -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) -printf '%T@\\t%p\\n' | sort -rn", "_", root.wpDir]
+        command: ["sh", "-c", "find \"$1\" -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) -printf '%T@\\t%p\\n' | sort -rn", "_", root.wpDir]
         stdout: StdioCollector {
             onStreamFinished: {
                 var lines = this.text.split("\n");

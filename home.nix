@@ -24,6 +24,10 @@ in
     ANDROID_SDK_ROOT = "${androidSdk.androidsdk}/libexec/android-sdk";
   };
 
+  home.sessionPath = [
+    "$HOME/.cargo/bin"
+  ];
+
   home.activation.linkDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     _linkConfig() {
       local src="${repoPath}/$1"
@@ -59,4 +63,27 @@ in
     touch "$HOME/.cache/ricelin/ghostty-colors"
     touch "$HOME/.cache/ricelin/hypr-colors.lua"
   '';
+
+  home.pointerCursor = {
+    gtk.enable = true;
+    x11.enable = true;
+    package = pkgs.bibata-cursors;
+    name = "Bibata-Modern-Ice";
+    size = 24;
+  };
+
+  systemd.user.services.hypridle = {
+    Unit = {
+      Description = "Hyprland idle daemon";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+    Service = {
+      ExecStart = "${pkgs.hypridle}/bin/hypridle";
+      Restart = "on-failure";
+    };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
+  };
 }

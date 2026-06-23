@@ -46,6 +46,5 @@ ShellRoot {
             sessionLock.locked = true;
             Cava.enabled = true;
         }
-        function reload(): void { Quickshell.reload(true); }
     }
 }

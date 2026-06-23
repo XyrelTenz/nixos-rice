@@ -2,13 +2,6 @@
 
 let
   repoPath = "/home/${username}/nixos-config/.config";
-  androidSdk = pkgs.androidenv.composeAndroidPackages {
-    abiVersions = [ "x86_64" ];
-    platformVersions = [ "34" ];
-    includeEmulator = true;
-    includeSystemImages = true;
-    systemImageTypes = [ "google_apis_playstore" ];
-  };
 in
 {
   home.username = username;
@@ -16,16 +9,21 @@ in
   home.stateVersion = "26.05";
 
   home.packages = [
-    androidSdk.androidsdk
+    # Android Studio's SDK is used, no need for Nix-managed SDK package here
   ];
 
   home.sessionVariables = {
-    ANDROID_HOME = "${androidSdk.androidsdk}/libexec/android-sdk";
-    ANDROID_SDK_ROOT = "${androidSdk.androidsdk}/libexec/android-sdk";
+    ANDROID_HOME = "/home/${username}/Android/Sdk";
+    ANDROID_SDK_ROOT = "/home/${username}/Android/Sdk";
+    ANDROID_AVD_HOME = "/home/${username}/.config/.android/avd";
   };
 
   home.sessionPath = [
+    "$HOME/.local/bin"
     "$HOME/.cargo/bin"
+    "$HOME/Android/Sdk/cmdline-tools/latest/bin"
+    "$HOME/Android/Sdk/emulator"
+    "$HOME/Android/Sdk/platform-tools"
   ];
 
   home.activation.linkDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

@@ -14,14 +14,13 @@
     QML_IMPORT_PATH  = "/run/current-system/sw/lib/qt-6/qml";
   };
 
-  # Registers fish in /etc/shells so it can be used as a login shell
   programs.fish.enable = true;
   programs.zoxide.enable = true;
 
-  # Enable nix-ld to run unpatched dynamic binaries downloaded by rustup
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
     stdenv.cc.cc
+    stdenv.cc.cc.lib
     zlib
     fuse3
     alsa-lib
@@ -43,6 +42,10 @@
     icu
     openssl
     libX11
+    libxkbfile
+    libSM
+    libICE
+    xcbutilcursor
     libXcursor
     libXdamage
     libXext
@@ -53,5 +56,18 @@
     libXtst
     libxcb
     libxshmfence
+    
+    libpulseaudio
+    fontconfig
+    freetype
+    libxml2
+    expat
+    libpng
+    libbsd
+    libuuid
+    libdrm
+    libsecret
+    libXcomposite
+    vulkan-loader
   ];
 }

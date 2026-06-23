@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Effects
 import "Singletons"
 
 /**
@@ -58,13 +59,15 @@ Item {
 
         Rectangle {
             id: field
+            property bool hovered: false
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - 72 * pick.s
             height: 24 * pick.s
             radius: 9 * pick.s
-            color: Theme.tileBg
+            color: pick.open ? Qt.alpha(Theme.onGlow, 0.14) : (field.hovered ? Theme.frameBg : "transparent")
             border.width: 1
-            border.color: pick.open ? Qt.alpha(Theme.vermLit, 0.55) : Theme.border
+            border.color: pick.open ? Qt.alpha(Theme.onGlow, 0.5) : Theme.hairSoft
+            Behavior on color { ColorAnimation { duration: Motion.fast } }
 
             DisplayLabel {
                 anchors.left: parent.left
@@ -89,13 +92,38 @@ Item {
 
             MouseArea {
                 anchors.fill: parent
+                hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
+                onEntered: field.hovered = true
+                onExited: field.hovered = false
                 onClicked: pick.requestToggle()
             }
         }
     }
 
+    /**
+     * Shadow caster kept separate from the panel. A layer that holds the option
+     * text would rasterise the glyphs to an offscreen texture and soften them, so
+     * the shadow lives on this textless backing rect and the panel above stays
+     * unlayered with crisp digits. Its own face hides behind the opaque panel, only
+     * the shadow halo bleeds out.
+     */
     Rectangle {
+        anchors.fill: panel
+        visible: pick.open
+        radius: panel.radius
+        color: Theme.cardBot
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: Theme.shadow
+            shadowBlur: 0.6
+            shadowVerticalOffset: 4 * pick.s
+        }
+    }
+
+    Rectangle {
+        id: panel
         anchors.top: head.bottom
         anchors.topMargin: pick.open ? pick.gap : 0
         anchors.left: parent.left
@@ -105,9 +133,12 @@ Item {
         visible: pick.open
         clip: true
         radius: 9 * pick.s
-        color: Theme.cardBot
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: Theme.cardTop }
+            GradientStop { position: 1.0; color: Theme.cardBot }
+        }
         border.width: 1
-        border.color: Theme.hairSoft
+        border.color: Theme.frameBorder
 
         ListView {
             anchors.fill: parent
@@ -125,7 +156,7 @@ Item {
                 height: 24 * pick.s
                 radius: 7 * pick.s
                 color: optHover.hovered ? Theme.frameBg
-                    : (optRow.current ? Qt.alpha(Theme.vermLit, 0.14) : "transparent")
+                    : (optRow.current ? Qt.alpha(Theme.onGlow, 0.16) : "transparent")
 
                 HoverHandler { id: optHover }
 
@@ -135,7 +166,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     s: pick.s
                     text: optRow.modelData.label
-                    color: optRow.current ? Theme.vermLit : Theme.subtle
+                    color: optRow.current ? Theme.cream : Theme.subtle
                     weight: optRow.current ? Font.Bold : Font.Medium
                 }
 

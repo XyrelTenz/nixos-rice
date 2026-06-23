@@ -91,6 +91,79 @@ SettingsSurface {
         command: ["systemctl", "--user", "restart", "hypridle"]
     }
 
+    /**
+     * One idle row: name and caption on their own full-width line with the
+     * segmented control stacked below, so a six-option strip never squeezes the
+     * caption into a narrow wrapping column. Hover lights the row and feeds the
+     * soul seam, matching the rest of the settings rows.
+     */
+    component IdleRow: Item {
+        id: irow
+        property string name: ""
+        property string caption: ""
+        property bool last: false
+        default property alias seg: segSlot.data
+        readonly property real s: root.s
+
+        width: parent ? parent.width : 0
+        height: col.implicitHeight + 22 * irow.s
+
+        HoverHandler {
+            id: ih
+            onHoveredChanged: root.reportRowHover(irow, hovered)
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: 3 * irow.s
+            anchors.bottomMargin: 3 * irow.s
+            radius: 9 * irow.s
+            color: (ih.hovered || root.focusRowItem === irow) ? Theme.frameBg : "transparent"
+            Behavior on color { ColorAnimation { duration: Motion.fast } }
+        }
+
+        Column {
+            id: col
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 12 * irow.s
+            anchors.rightMargin: 12 * irow.s
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 3 * irow.s
+
+            Text {
+                text: irow.name
+                color: Theme.cream
+                font.family: Theme.font
+                font.pixelSize: 12.5 * irow.s
+                font.weight: Font.DemiBold
+            }
+            Text {
+                width: parent.width
+                visible: irow.caption.length > 0
+                text: irow.caption
+                color: Theme.faint
+                font.family: Theme.font
+                font.pixelSize: 10.5 * irow.s
+            }
+            Item { width: 1; height: 7 * irow.s }
+            Item {
+                id: segSlot
+                width: childrenRect.width
+                height: childrenRect.height
+            }
+        }
+
+        Rectangle {
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 1
+            color: Theme.hairSoft
+            visible: !irow.last
+        }
+    }
+
     Column {
         id: content
         anchors.top: parent.top
@@ -107,43 +180,40 @@ SettingsSurface {
 
         Item { width: 1; height: 12 * root.s }
 
-        SettingsRow {
-            id: lockRow
-            surface: root
+        IdleRow {
             name: "Auto-lock"
-            sub: "Lock the screen after idle"
+            caption: "Lock the screen after idle"
 
             SettingsSeg {
                 s: root.s
+                flushLeft: true
                 options: root.lockOptions
                 value: Flags.idleLockMin
                 onPicked: (v) => { Flags.idleLockMin = v; root.apply(); }
             }
         }
 
-        SettingsRow {
-            id: screenRow
-            surface: root
+        IdleRow {
             name: "Screen off"
-            sub: "Blank the display after idle"
+            caption: "Blank the display after idle"
 
             SettingsSeg {
                 s: root.s
+                flushLeft: true
                 options: root.screenOptions
                 value: Flags.idleScreenOffMin
                 onPicked: (v) => { Flags.idleScreenOffMin = v; root.apply(); }
             }
         }
 
-        SettingsRow {
-            id: suspendRow
-            surface: root
+        IdleRow {
             name: "Suspend"
-            sub: "Sleep the machine after idle"
+            caption: "Sleep the machine after idle"
             last: true
 
             SettingsSeg {
                 s: root.s
+                flushLeft: true
                 options: root.suspendOptions
                 value: Flags.idleSuspendMin
                 onPicked: (v) => { Flags.idleSuspendMin = v; root.apply(); }

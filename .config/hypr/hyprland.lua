@@ -1,5 +1,3 @@
-package.path = package.path .. ";" .. os.getenv("HOME") .. "/.config/hypr/?.lua"
-
 require("modules.env")
 require("modules.monitors")
 require("modules.input")

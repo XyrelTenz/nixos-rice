@@ -8,14 +8,12 @@ return {
 		"NvChad/ui",
 		lazy = false,
 	},
-
 	{
 		"neovim/nvim-lspconfig",
 		config = function()
 			require("configs.lspconfig")
 		end,
 	},
-	--- Nvim Tree
 	{
 		"nvim-tree/nvim-tree.lua",
 		opts = {
@@ -43,7 +41,6 @@ return {
 			view = { adaptive_size = true, side = "left" },
 		},
 	},
-	--- Copilot
 	{
 		"zbirenbaum/copilot.lua",
 		cmd = "Copilot",
@@ -59,8 +56,6 @@ return {
 			panel = { enabled = false },
 		},
 	},
-
-	--- Golang
 	{
 		"ray-x/go.nvim",
 		dependencies = {
@@ -75,8 +70,6 @@ return {
 		ft = { "go", "gomod" },
 		build = ':lua require("go.install").update_all_sync()',
 	},
-
-	--- Blink CMP
 	{
 		"saghen/blink.cmp",
 		version = "*",
@@ -89,12 +82,7 @@ return {
 			},
 		},
 	},
-
-	--- Code Action Ligh Bulb
-	-- { "kosayoda/nvim-lightbulb", lazy = false, priority = 1000, opts = { autocmd = { enabled = true } } },
-
 	{ import = "nvchad.blink.lazyspec" },
-	-- Auto Give Commit Messages
 	{
 		"ajatdarojat45/commitmate.nvim",
 		lazy = false,
@@ -109,28 +97,16 @@ return {
 			})
 		end,
 	},
-
-	-- Typer
-	-- {
-	-- 	"nvzone/typr",
-	-- 	dependencies = "nvzone/volt",
-	-- 	opts = {},
-	-- 	cmd = { "Typr", "TyprStats" },
-	-- },
-
-	--- Project for Rooter
 	{
 		"ahmedkhalf/project.nvim",
 		lazy = false,
 		config = function()
 			require("project_nvim").setup({
 				detection_methods = { "lsp", "pattern" },
-				patterns = { ".git", "package.json", "pubspec.yaml", "build.gradle.kts", "module.yaml" },
+				patterns = { ".git", "package.json", "build.gradle.kts", "module.yaml" },
 			})
 		end,
 	},
-
-	--- Error Diagnostics
 	{
 		"folke/trouble.nvim",
 		cmd = "Trouble",
@@ -148,25 +124,7 @@ return {
 				},
 			},
 		},
-		-- keys = {
-		-- 	{
-		-- 		"<leader>xx",
-		-- 		"<cmd>Trouble diagnostics toggle<cr>",
-		-- 		desc = "Project Diagnostics (Trouble)",
-		-- 	},
-		-- 	{
-		-- 		"<leader>xb",
-		-- 		"<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
-		-- 		desc = "Buffer Diagnostics (Trouble)",
-		-- 	},
-		-- 	{
-		-- 		"<leader>cs",
-		-- 		"<cmd>Trouble symbols toggle focus=false<cr>",
-		-- 		desc = "Symbols (Trouble)",
-		-- 	},
-		-- },
 	},
-	--- Nvim Tree Sitter
 	{
 		"nvim-treesitter/nvim-treesitter",
 		opts = {
@@ -176,11 +134,8 @@ return {
 				"vimdoc",
 				"html",
 				"css",
-				-- "kotlin",
 				"typescript",
-				"java",
 				"javascript",
-				"dart",
 				"go",
 				"rust",
 				"toml",

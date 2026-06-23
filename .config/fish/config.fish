@@ -8,7 +8,7 @@ if status is-interactive
     abbr -a gl  'git pull'
     abbr -a gc  'git commit -m'
     abbr -a lg  'lazygit'
-    abbr -a nrs 'sudo nixos-rebuild switch --flake ~/.nixos-config#'
+    abbr -a nrs 'sudo nixos-rebuild switch --flake .#XyrelTenz'
     abbr -a v   'nvim'
     abbr -a cat 'bat'
     abbr -a ff  'fastfetch'
@@ -22,7 +22,22 @@ if status is-interactive
     end
 
     # ── Environment ───────────────────────────────────────────────────
+    fish_add_path ~/.local/bin
     fish_add_path ~/.cargo/bin
+    fish_add_path ~/Android/Sdk/cmdline-tools/latest/bin
+    fish_add_path ~/Android/Sdk/emulator
+    fish_add_path ~/Android/Sdk/platform-tools
+
+    alias bun='env LD_LIBRARY_PATH=/run/current-system/sw/share/nix-ld/lib:$LD_LIBRARY_PATH bun'
+    alias npx='env LD_LIBRARY_PATH=/run/current-system/sw/share/nix-ld/lib:$LD_LIBRARY_PATH npx'
+    alias npm='env LD_LIBRARY_PATH=/run/current-system/sw/share/nix-ld/lib:$LD_LIBRARY_PATH npm'
+    alias yarn='env LD_LIBRARY_PATH=/run/current-system/sw/share/nix-ld/lib:$LD_LIBRARY_PATH yarn'
+    alias node='env LD_LIBRARY_PATH=/run/current-system/sw/share/nix-ld/lib:$LD_LIBRARY_PATH node'
+
+    set -x ANDROID_HOME ~/Android/Sdk
+    set -x ANDROID_SDK_ROOT ~/Android/Sdk
+    set -x ANDROID_AVD_HOME ~/.config/.android/avd
+
     set -x EDITOR nvim
     set -x VISUAL nvim
 end

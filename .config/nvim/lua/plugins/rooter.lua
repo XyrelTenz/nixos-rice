@@ -10,12 +10,10 @@ return {
 				".svn",
 				"build.gradle.kts",
 				"settings.gradle.kts",
-				"pubspec.yaml",
 				"module.yaml",
 				"amper.bat",
 				"amper.sh",
 				".agent",
-				"flutter_yaml_bridge.yaml",
 				"rust-project.json",
 			},
 		})

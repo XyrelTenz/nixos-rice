@@ -32,9 +32,8 @@ in {
 
     neovim
     android-tools
-    android-studio
+    jdk17
     tree-sitter
-    flutter
     nodejs_22
     clang
     ninja
@@ -42,6 +41,7 @@ in {
     pkg-config
     rustup
     just
+    bun
 
     clang-tools
     typescript
@@ -56,7 +56,6 @@ in {
     sqls
     lazygit
     gcc
-    dart
     jdt-language-server
     rust-analyzer
     slint-lsp

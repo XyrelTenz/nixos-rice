@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WPDIR="$HOME/Pictures/Wallpapers"
+WPDIR="$HOME/Ricelin/wallpapers"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin-wallpaper"
 BAG="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin-wallpaper-bag"
 
@@ -19,7 +19,7 @@ ensure_daemon() {
 }
 
 list_pics() {
-    find "$WPDIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \)
+    find "$WPDIR" -type f \( -iname '*.jpg' -o -iname '*.png' \)
 }
 
 refill_bag() {

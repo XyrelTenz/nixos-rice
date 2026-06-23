@@ -17,14 +17,21 @@ Rectangle {
     property var value
     signal picked(var value)
 
-    readonly property real pad: 1
+    /**
+     * When `flushLeft`, the control shifts left by the first option's text inset
+     * so that text lines up with x=0 of where the control is placed, rather than
+     * the pill edge sitting there.
+     */
+    property bool flushLeft: false
 
+    readonly property real pad: 1
+    readonly property real edgePad: seg.pad + 9 * seg.s
+
+    x: seg.flushLeft ? -seg.edgePad : 0
     width: pills.implicitWidth + 2 * pad
     height: pills.implicitHeight + 2 * pad
     radius: 9 * seg.s
-    color: Theme.tileBg
-    border.width: 1
-    border.color: Theme.border
+    color: "transparent"
 
     Row {
         id: pills
@@ -38,13 +45,12 @@ Rectangle {
                 id: opt
                 required property var modelData
                 readonly property bool current: seg.value === modelData.value
+                property bool hovered: false
 
                 width: optLabel.implicitWidth + 18 * seg.s
                 height: optLabel.implicitHeight + 12 * seg.s
                 radius: 8 * seg.s
-                color: opt.current ? Qt.alpha(Theme.vermLit, 0.20) : "transparent"
-                border.width: 1
-                border.color: opt.current ? Qt.alpha(Theme.vermLit, 0.55) : "transparent"
+                color: opt.current ? Qt.alpha(Theme.onGlow, 0.16) : (opt.hovered ? Theme.frameBg : "transparent")
                 Behavior on color { ColorAnimation { duration: Motion.fast } }
 
                 Text {
@@ -60,7 +66,10 @@ Rectangle {
 
                 MouseArea {
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onEntered: opt.hovered = true
+                    onExited: opt.hovered = false
                     onClicked: seg.picked(opt.modelData.value)
                 }
             }

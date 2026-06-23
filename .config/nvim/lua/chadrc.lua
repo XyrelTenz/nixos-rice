@@ -23,7 +23,7 @@ M.general = {
 		},
 	},
 }
--- M.nvdash = { load_on_startup = true }
+
 M.ui = {
 	tabufline = {
 		enabled = true,
@@ -34,8 +34,6 @@ M.ui = {
 		lazyload = true,
 	},
 	statusline = {
-		-- theme = "minimal",
-		-- theme = "vscode_colored",
 		theme = "default",
 		separator_style = "round",
 	},

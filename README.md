@@ -1,6 +1,6 @@
 # NixOS Configuration
 
-A custom NixOS flake and Home Manager setup, custom-built for high-performance desktop layouts (Hyprland + Quickshell), terminal environments (Ghostty + Fish), and modern development workflows (Flutter, Android, TypeScript/React).
+A custom NixOS flake and Home Manager setup, custom-built for high-performance desktop layouts (Hyprland + Quickshell), terminal environments (Ghostty + Fish), and modern development workflows (Android, TypeScript/React).
 
 ## Customizing for Your System (Other Users)
 

@@ -27,7 +27,7 @@ Singleton {
     property string current: ""
     property bool pending: false
 
-    readonly property string wpDir: Quickshell.env("HOME") + "/Pictures/Wallpapers"
+    readonly property string wpDir: Quickshell.env("HOME") + "/Ricelin/wallpapers"
     readonly property string thumbDir: (Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/ricelin-wp-thumbs/"
     readonly property string thumbScript: Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-thumbs.sh"
     readonly property string setScript: Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper.sh"
@@ -84,7 +84,7 @@ Singleton {
 
     Process {
         id: listProc
-        command: ["sh", "-c", "find \"$1\" -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) -printf '%T@\\t%p\\n' | sort -rn", "_", root.wpDir]
+        command: ["sh", "-c", "find \"$1\" -type f \\( -iname '*.jpg' -o -iname '*.png' \\) -printf '%T@\\t%p\\n' | sort -rn", "_", root.wpDir]
         stdout: StdioCollector {
             onStreamFinished: {
                 var lines = this.text.split("\n");

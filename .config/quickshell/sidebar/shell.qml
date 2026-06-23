@@ -28,7 +28,11 @@ ShellRoot {
         }
     }
 
-
+    Binding {
+        target: Notifs
+        property: "dnd"
+        value: Flags.dnd
+    }
 
     PanelWindow {
         id: inhibitWin
@@ -56,7 +60,6 @@ ShellRoot {
             if (mon && mon.length) root.targetMonitor = mon;
             root.shown = true;
         }
-        function reload(): void { Quickshell.reload(true); }
     }
 
     Variants {

@@ -19,18 +19,7 @@
 
   programs.fish.enable = true;
   programs.zoxide.enable = true;
-  programs.vscode.extensions = with pkgs.vscode-extensions; [
-    ms-python.python
-    ms-python.vscode-pylance
-    ms-vscode.cpptools
-    ms-vscode.cpptools-extension-pack
-    rust-lang.rust-analyzer
-    vadimcn.vscode-lldb
-    bungcip.better-toml
-    esbenp.prettier-vscode
-    dbaeumer.vscode-eslint
-    eamodio.gitlens
-  ];
+
 
   programs.direnv = {
     enable = true;

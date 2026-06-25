@@ -29,6 +29,7 @@ in {
     brave
     mangohud
     protonup-qt
+    zed-editor
 
     neovim
     android-tools

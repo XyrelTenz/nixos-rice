@@ -15,6 +15,7 @@
     ./modules/users.nix
     ./modules/packages.nix
     ./modules/environment.nix
+    ./modules/services.nix
   ];
 
   system.stateVersion = "26.05";

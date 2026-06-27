@@ -45,6 +45,7 @@ Item {
     readonly property bool keybindsOpen: surface === "keybinds"
     readonly property bool workspacesOpen: surface === "workspaces"
     readonly property bool stashOpen: surface === "stash"
+    readonly property bool spaceappsOpen: surface === "spaceapps"
     readonly property bool recorderOpen: surface === "recorder"
     readonly property bool sysmonOpen: surface === "sysmon"
     readonly property bool appearanceOpen: surface === "appearance"
@@ -97,6 +98,14 @@ Item {
                 if (sw === "special:minimized") return "Minimized";
                 if (sw === "special:private") return "Private";
                 if (sw === "special:stash") return "Stash";
+                if (sw && sw.indexOf("special:") === 0) {
+                    var id = sw.slice("special:".length);
+                    var sl = Spaces.list;
+                    for (var j = 0; j < sl.length; j++)
+                        if (sl[j] && sl[j].id === id)
+                            return sl[j].name;
+                    return id.charAt(0).toUpperCase() + id.slice(1);
+                }
                 return "";
             }
         }
@@ -140,6 +149,7 @@ Item {
     readonly property real keybindsW: 460 * s
     readonly property real workspacesW: 392 * s
     readonly property real stashW: 392 * s
+    readonly property real spaceappsW: 392 * s
     readonly property real recorderW: 384 * s
     readonly property real sysmonW: 392 * s
     readonly property real appearanceW: 392 * s
@@ -181,6 +191,7 @@ Item {
         keybinds:  { size: () => Qt.size(keybindsW, keybinds.implicitHeight + 29 * s), ame: keybinds },
         workspaces: { size: () => Qt.size(workspacesW, workspaces.implicitHeight + 29 * s), ame: workspaces },
         stash:     { size: () => Qt.size(stashW, stash.implicitHeight + 29 * s), ame: stash },
+        spaceapps: { size: () => Qt.size(spaceappsW, spaceapps.implicitHeight + 29 * s), ame: spaceapps },
         recorder:  { size: () => Qt.size(recorderW, recorder.implicitHeight + 33 * s), ame: recorder },
         sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon },
         appearance: { size: () => Qt.size(appearanceW, appearance.implicitHeight + 29 * s), ame: appearance },
@@ -354,6 +365,17 @@ Item {
                 stash.closeAdd();
             else
                 pill.requestSurface("workspaces");
+            return;
+        }
+        if (pill.spaceappsOpen) {
+            if (spaceapps.addOpen)
+                spaceapps.closeAdd();
+            else
+                pill.requestSurface("workspaces");
+            return;
+        }
+        if (pill.workspacesOpen && workspaces.formOpen) {
+            workspaces.closeForm();
             return;
         }
         if (pill.appearanceOpen || pill.updatesOpen || pill.displayOpen || pill.inputOpen || pill.lookOpen || pill.idlelockOpen || pill.animationOpen || pill.workspacesOpen) {
@@ -1380,6 +1402,15 @@ Item {
         id: stash
         s: pill.s
         open: pill.stashOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    SpaceApps {
+        id: spaceapps
+        s: pill.s
+        open: pill.spaceappsOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
         onRequestSurface: (name) => pill.requestSurface(name)

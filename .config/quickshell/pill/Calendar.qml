@@ -748,10 +748,26 @@ PillSurface {
         property string endVal: ""
         property string titleVal: ""
 
+        /**
+         * recur is "" / "month" / "year". It suggests yearly by itself once the
+         * title reads like a birthday and then stays as the user left it after they
+         * work the Repeat toggle by hand (recurManual).
+         */
+        property string recur: ""
+        property bool recurManual: false
+
+        /** Suggest yearly for a birthday title, unless the user already chose. */
+        function autoRecur() {
+            if (!recurManual)
+                recur = Events.isBirthday(titleVal) ? "year" : "";
+        }
+
         function clearForm() {
             startVal = "";
             endVal = "";
             titleVal = "";
+            recur = "";
+            recurManual = false;
             startField.text = "";
             endField.text = "";
             titleField.text = "";
@@ -769,7 +785,8 @@ PillSurface {
                 return;
             var t = editor.mode === "timed" ? editor.cleanTime(startVal) : "";
             var e = editor.mode === "timed" ? editor.cleanTime(endVal) : "";
-            Events.add(root.selectedDate, root.selEndDate, t, e, titleVal.trim());
+            Events.add(root.selectedDate, editor.recur !== "" ? "" : root.selEndDate,
+                       t, e, titleVal.trim(), editor.recur);
             clearForm();
             titleField.forceActiveFocus();
         }
@@ -827,7 +844,7 @@ PillSurface {
                         radius: Motion.rSmall * root.s
                         color: evArea.hovered ? Theme.frameBg : "transparent"
 
-                        /** "all day" or "09:00–10:00", prefixed with the date span when multi-day. */
+                        /** "all day" or "09:00–10:00", a date span when multi-day, "every year" when recurring. */
                         readonly property string meta: {
                             var datePart = "";
                             if (evRow.modelData.endDate && evRow.modelData.endDate.length > 0)
@@ -836,7 +853,11 @@ PillSurface {
                             var e = evRow.modelData.endTime || "";
                             var timePart = t.length === 0 ? "all day"
                                 : (e.length > 0 ? t + "–" + e : t);
-                            return datePart.length > 0 ? datePart + " · " + timePart : timePart;
+                            var base = datePart.length > 0 ? datePart + " · " + timePart : timePart;
+                            var r = evRow.modelData.recur;
+                            if (r === "year") return "every year · " + base;
+                            if (r === "month") return "every month · " + base;
+                            return base;
                         }
 
                         HoverHandler { id: evArea }
@@ -934,7 +955,7 @@ PillSurface {
                         placeholderTextColor: Theme.faint
                         selectByMouse: true
                         selectionColor: Theme.verm
-                        onTextChanged: editor.titleVal = text
+                        onTextChanged: { editor.titleVal = text; editor.autoRecur(); }
                         Keys.onReturnPressed: editor.commit()
                     }
                     Rectangle {
@@ -1064,14 +1085,34 @@ PillSurface {
                 }
             }
 
+            SettingsSeg {
+                s: root.s
+                options: [
+                    { label: "Once", value: "" },
+                    { label: "Monthly", value: "month" },
+                    { label: "Yearly", value: "year" }
+                ]
+                value: editor.recur
+                onPicked: (v) => {
+                    editor.recurManual = true;
+                    editor.recur = v;
+                    if (v !== "") {
+                        root.selEndDate = "";
+                        root.pickingEnd = false;
+                    }
+                }
+            }
+
             /**
              * Span control: the chip shows the day or range, the button arms the
              * grid so the next day click closes a span (the under-grid hint and
              * range tint guide it), and ✕ drops a set span back to a single day.
+             * Hidden for a recurring entry, which is a single repeating day.
              */
             Row {
                 width: parent.width
                 spacing: 8 * root.s
+                visible: editor.recur === ""
 
                 Rectangle {
                     id: spanChip

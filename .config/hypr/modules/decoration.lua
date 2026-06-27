@@ -15,7 +15,7 @@ hl.config({
         gaps_in     = 5,
         gaps_out    = 5,
         border_size = 0,
-        layout      = "dwindle",
+        layout      = "master",
         resize_on_border = true,
         ["col.active_border"]   = active,
         ["col.inactive_border"] = inactive,

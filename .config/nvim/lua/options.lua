@@ -50,8 +50,6 @@ opt.showtabline = 0
 opt.cmdheight = 0
 opt.fillchars:append({ vert = " " })
 
-vim.g.copilot_no_tab_map = true
-
 -- -- Set statusline
 -- opt.laststatus = 0
 -- -- opt.statusline = require("core.statusline").statusline

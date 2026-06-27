@@ -75,7 +75,7 @@ def main():
     write(config / "hypr/modules/monitors.lua", "monitor A\nspacer\nspacer\nmonitor B\nspacer\nspacer\ntail\n")
     write(config / "quickshell/pill/Look.qml", "stale local code\n")
 
-    first = ru.run("apply", str(origin), config, set())
+    first = ru.run("apply", str(origin), config, set(), set())
     assert first["status"] == "ok", first
     assert first["applied"] is True
     assert (config / "quickshell/pill/Look.qml").read_text() == "code v3\n", "code must overwrite"
@@ -101,7 +101,7 @@ def main():
     write(config / "hypr/modules/binds.lua", "bind one local\nspacer\nspacer\nbind two\nspacer\nspacer\nbind three\n")
     write(config / "hypr/modules/monitors.lua", "monitor A\nspacer\nspacer\nmonitor B local\nspacer\nspacer\ntail\n")
 
-    res = ru.run("check", str(origin), config, set())
+    res = ru.run("check", str(origin), config, set(), set())
     states = {r["name"]: r["state"] for r in res["modules"]}
     assert states["binds"] == "merged", states
     assert states["monitors"] == "merged", states
@@ -110,7 +110,7 @@ def main():
     assert res["behind"] == 1, res["behind"]
     print("non-overlapping diverge -> clean merge, changelog range: ok")
 
-    apply_res = ru.run("apply", str(origin), config, set())
+    apply_res = ru.run("apply", str(origin), config, set(), set())
     binds_out = (config / "hypr/modules/binds.lua").read_text()
     assert "bind one local" in binds_out and "bind two changed upstream" in binds_out, binds_out
     assert "monitor C upstream" in (config / "hypr/modules/monitors.lua").read_text()
@@ -124,7 +124,7 @@ def main():
     write(config / "hypr/modules/binds.lua", "bind one\nspacer\nspacer\nbind two mine\nspacer\nspacer\nbind three\n")
     conflict_before = (config / "hypr/modules/binds.lua").read_text()
 
-    conf = ru.run("apply", str(origin), config, set())
+    conf = ru.run("apply", str(origin), config, set(), set())
     states = {r["name"]: r["state"] for r in conf["modules"]}
     assert states["binds"] == "conflict", states
     assert binds[len("configs/"):] in conf["conflicts"], conf["conflicts"]
@@ -135,7 +135,7 @@ def main():
     m = json.loads(ru.manifest_path().read_text())
     m["modules"][binds[len("configs/"):]] = base_before_bump
     ru.manifest_path().write_text(json.dumps(m))
-    taken = ru.run("apply", str(origin), config, {binds[len("configs/"):]})
+    taken = ru.run("apply", str(origin), config, {binds[len("configs/"):]}, set())
     assert (config / "hypr/modules/binds.lua").read_text() == "bind one\nspacer\nspacer\nbind two changed upstream\nspacer\nspacer\nbind three\n"
     print("--take overwrites conflicting file: ok")
 
@@ -152,7 +152,7 @@ def main():
     write(worktree / "configs/quickshell/pill/Look.qml", "live uncommitted work\n")
     (dev_root / "quickshell").symlink_to(worktree / "configs/quickshell")
     assert ru.is_devmode(dev_root) is True, "quickshell-only symlink must be devmode"
-    assert ru.run("check", str(origin), dev_root, set())["status"] == "devmode"
+    assert ru.run("check", str(origin), dev_root, set(), set())["status"] == "devmode"
 
     rel_root = tmp / "relconfig"
     rel_root.mkdir(parents=True)

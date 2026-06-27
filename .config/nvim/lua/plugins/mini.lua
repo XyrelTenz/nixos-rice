@@ -28,7 +28,6 @@ return {
 				pattern = {
 					"Trouble",
 					"alpha",
-					"copilot-chat",
 					"dashboard",
 					"help",
 					"lazy",

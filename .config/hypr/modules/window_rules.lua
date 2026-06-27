@@ -61,11 +61,13 @@ hl.window_rule({
     idle_inhibit = "fullscreen",
 })
 
-hl.window_rule({
-    name   = "float-emulator",
-    match  = {
-        class = "Emulator",
-    },
-    float  = true,
-    size   = { 430, 900 },
-})
+local ok, stashApps = pcall(require, "modules.stash-apps")
+if ok and type(stashApps) == "table" then
+    for _, cls in ipairs(stashApps) do
+        hl.window_rule({
+            name      = "stash-" .. cls,
+            match     = { class = cls },
+            workspace = "special:stash",
+        })
+    end
+end

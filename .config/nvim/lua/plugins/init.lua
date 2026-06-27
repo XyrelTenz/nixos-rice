@@ -17,7 +17,7 @@ return {
 	{
 		"nvim-tree/nvim-tree.lua",
 		opts = {
-			sync_root_with_cwd = true,
+			sync_root_with_cwd = false,
 			respect_buf_cwd = false,
 			update_focused_file = {
 				enable = true,
@@ -41,22 +41,10 @@ return {
 				vim.keymap.set("n", "h", api.node.navigate.parent_close, opts("Close Directory"))
 				vim.keymap.set("n", "<CR>", api.node.open.edit, opts("Open"))
 			end,
-			view = { adaptive_size = true, side = "left" },
-		},
-	},
-	{
-		"zbirenbaum/copilot.lua",
-		cmd = "Copilot",
-		event = "InsertEnter",
-		opts = {
-			suggestion = {
-				enabled = true,
-				auto_trigger = true,
-				keymap = {
-					accept = "<C-l>",
-				},
+			view = {
+				adaptive_size = true,
+				side = "right",
 			},
-			panel = { enabled = false },
 		},
 	},
 	{
@@ -86,20 +74,6 @@ return {
 		},
 	},
 	{ import = "nvchad.blink.lazyspec" },
-	{
-		"ajatdarojat45/commitmate.nvim",
-		lazy = false,
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"CopilotC-Nvim/CopilotChat.nvim",
-		},
-		config = function()
-			require("commitmate").setup({
-				open_lazygit = true,
-				ping_message = "CommitMate.nvim is ready",
-			})
-		end,
-	},
 	{
 		"ahmedkhalf/project.nvim",
 		lazy = false,

@@ -6,6 +6,7 @@ import QtQuick.Shapes
 import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Networking
+import Quickshell.Hyprland
 import "Singletons"
 
 /**
@@ -42,6 +43,8 @@ Item {
     readonly property bool batteryOpen: surface === "battery"
     readonly property bool settingsOpen: surface === "settings"
     readonly property bool keybindsOpen: surface === "keybinds"
+    readonly property bool workspacesOpen: surface === "workspaces"
+    readonly property bool stashOpen: surface === "stash"
     readonly property bool recorderOpen: surface === "recorder"
     readonly property bool sysmonOpen: surface === "sysmon"
     readonly property bool appearanceOpen: surface === "appearance"
@@ -71,6 +74,34 @@ Item {
     readonly property bool surfaceOpen: surface.length > 0
     property bool hoverLatch: false
     readonly property bool expanded: surfaceOpen || held || hoverLatch
+
+    /**
+     * True while the open surface is waiting on an external auth dialog (the
+     * updater's pkexec password prompt). The shell drops its modal grab for this
+     * so the polkit window underneath is clickable and typeable, instead of the
+     * backdrop swallowing the reach for it and dismissing the whole pill.
+     */
+    readonly property bool authPending: updatesOpen && updates.applying
+
+    /**
+     * The special workspace shown on this pill's monitor, surfaced as a plain word
+     * in place of the clock so it is obvious you are looking at the minimized stash
+     * or the private space rather than your real desktop. Empty in the normal case.
+     */
+    readonly property string specialView: {
+        var ms = Hyprland.monitors.values;
+        for (var i = 0; i < ms.length; i++) {
+            if (ms[i] && ms[i].name === pill.screenName) {
+                var o = ms[i].lastIpcObject;
+                var sw = (o && o.specialWorkspace) ? o.specialWorkspace.name : "";
+                if (sw === "special:minimized") return "Minimized";
+                if (sw === "special:private") return "Private";
+                if (sw === "special:stash") return "Stash";
+                return "";
+            }
+        }
+        return "";
+    }
     readonly property bool toastActive: Notifs.popups.length > 0
     readonly property bool osdActive: osd.flashing
 
@@ -107,6 +138,8 @@ Item {
     readonly property real batteryW: 316 * s
     readonly property real settingsW: 392 * s
     readonly property real keybindsW: 460 * s
+    readonly property real workspacesW: 392 * s
+    readonly property real stashW: 392 * s
     readonly property real recorderW: 384 * s
     readonly property real sysmonW: 392 * s
     readonly property real appearanceW: 392 * s
@@ -146,6 +179,8 @@ Item {
         battery:   { size: () => Qt.size(batteryW, battery.implicitHeight + 26 * s), ame: battery },
         settings:  { size: () => Qt.size(settingsW, settings.implicitHeight + 29 * s), ame: settings },
         keybinds:  { size: () => Qt.size(keybindsW, keybinds.implicitHeight + 29 * s), ame: keybinds },
+        workspaces: { size: () => Qt.size(workspacesW, workspaces.implicitHeight + 29 * s), ame: workspaces },
+        stash:     { size: () => Qt.size(stashW, stash.implicitHeight + 29 * s), ame: stash },
         recorder:  { size: () => Qt.size(recorderW, recorder.implicitHeight + 33 * s), ame: recorder },
         sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon },
         appearance: { size: () => Qt.size(appearanceW, appearance.implicitHeight + 29 * s), ame: appearance },
@@ -314,7 +349,14 @@ Item {
             pill.requestSurface("appearance");
             return;
         }
-        if (pill.appearanceOpen || pill.updatesOpen || pill.displayOpen || pill.inputOpen || pill.lookOpen || pill.idlelockOpen || pill.animationOpen) {
+        if (pill.stashOpen) {
+            if (stash.addOpen)
+                stash.closeAdd();
+            else
+                pill.requestSurface("workspaces");
+            return;
+        }
+        if (pill.appearanceOpen || pill.updatesOpen || pill.displayOpen || pill.inputOpen || pill.lookOpen || pill.idlelockOpen || pill.animationOpen || pill.workspacesOpen) {
             pill.requestSurface("settings");
             return;
         }
@@ -695,42 +737,61 @@ Item {
             spacing: 9 * pill.s
             Item {
                 id: restKanji
+                visible: pill.specialView === ""
                 anchors.verticalCenter: parent.verticalCenter
                 width: kanjiFill.implicitWidth
                 height: kanjiFill.implicitHeight
 
+                /** Audio leaving the speakers flips the clock glyph over to the live waveform. */
+                readonly property bool barsOn: Flags.musicViz && Cava.active
+
                 Text {
                     anchors.fill: parent
-                    visible: Flags.showGlyphs
+                    opacity: (Flags.showGlyphs && !restKanji.barsOn) ? 1 : 0
                     text: kanjiFill.text
                     color: "transparent"
                     font: kanjiFill.font
                     style: Text.Outline
                     styleColor: Qt.alpha(Theme.vermLit,
                         Math.min(1, (pill.mode === "rest" || !pill.hoverSoulGate ? 0.5 : 0) + pill.kanjiFlash))
+                    Behavior on opacity { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
                 }
 
                 Text {
                     id: kanjiFill
-                    visible: Flags.showGlyphs
+                    opacity: (Flags.showGlyphs && !restKanji.barsOn) ? 1 : 0
                     text: "時"
                     color: Theme.cream
                     font.family: Theme.fontJp
                     font.weight: Font.Medium
                     font.pixelSize: 15 * pill.s
+                    Behavior on opacity { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
                 }
 
                 GlyphIcon {
                     anchors.centerIn: parent
-                    visible: !Flags.showGlyphs
+                    opacity: (!Flags.showGlyphs && !restKanji.barsOn) ? 1 : 0
                     width: 17 * pill.s
                     height: 17 * pill.s
                     name: "clock"
                     color: Theme.cream
                     stroke: 1.7
+                    Behavior on opacity { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
+                }
+
+                MusicBars {
+                    id: musicBars
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: kanjiFill.baseline
+                    s: pill.s
+                    opacity: restKanji.barsOn ? 1 : 0
+                    scale: restKanji.barsOn ? 1 : 0.7
+                    Behavior on opacity { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
+                    Behavior on scale { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
                 }
             }
             Text {
+                visible: pill.specialView === ""
                 anchors.verticalCenter: parent.verticalCenter
                 text: clock.hhmm
                 color: Theme.cream
@@ -738,6 +799,15 @@ Item {
                 font.pixelSize: 16 * pill.s
                 font.weight: Font.DemiBold
                 font.features: { "tnum": 1 }
+            }
+            Text {
+                visible: pill.specialView !== ""
+                anchors.verticalCenter: parent.verticalCenter
+                text: pill.specialView
+                color: Theme.cream
+                font.family: Theme.font
+                font.pixelSize: 16 * pill.s
+                font.weight: Font.DemiBold
             }
         }
     }
@@ -1292,6 +1362,24 @@ Item {
         id: keybinds
         s: pill.s
         open: pill.keybindsOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    WorkspacesSurface {
+        id: workspaces
+        s: pill.s
+        open: pill.workspacesOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Stash {
+        id: stash
+        s: pill.s
+        open: pill.stashOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
         onRequestSurface: (name) => pill.requestSurface(name)

@@ -48,9 +48,10 @@ in
     # Starship config lives at ~/.config/starship.toml
     ln -sfn "${repoPath}/starship.toml" "$HOME/.config/starship.toml"
 
-    # Link fastfetch lantern logo
+    # Link fastfetch lantern logo and config template
     mkdir -p "$HOME/.config/fastfetch"
     ln -sfn "${repoPath}/fastfetch/lantern.txt" "$HOME/.config/fastfetch/lantern.txt"
+    ln -sfn "${repoPath}/fastfetch/config.jsonc.in" "$HOME/.config/fastfetch/config.jsonc.in"
 
     # Create placeholders for matugen and ricelin cache outputs to prevent startup crashes
     mkdir -p "$HOME/.cache/matugen"

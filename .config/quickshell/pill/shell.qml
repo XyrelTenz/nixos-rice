@@ -43,6 +43,29 @@ ShellRoot {
         Devices.restore();
     }
 
+    /**
+     * After an update relaunches the shell, raise a one-shot toast naming what
+     * landed, so the apply ends in a confirmation instead of a silent restart. The
+     * updater drops the marker just before it restarts; the short delay lets the
+     * notification server own the bus before we post to it, and the marker is
+     * removed as it is read so the toast only ever fires once.
+     */
+    Timer {
+        interval: 2500
+        running: true
+        onTriggered: updatedToast.running = true
+    }
+    Process {
+        id: updatedToast
+        command: ["sh", "-c",
+            "m=\"${XDG_STATE_HOME:-$HOME/.local/state}/ricelin/updated\"; [ -f \"$m\" ] || exit 0; "
+            + "b=$(cat \"$m\"); rm -f \"$m\"; "
+            + "gdbus call --session --dest org.freedesktop.Notifications "
+            + "--object-path /org/freedesktop/Notifications "
+            + "--method org.freedesktop.Notifications.Notify "
+            + "Ricelin 0 '' 'Ricelin updated' \"$b\" '[]' '{}' 5000 >/dev/null 2>&1"]
+    }
+
     Binding {
         target: Notifs
         property: "dnd"
@@ -61,6 +84,18 @@ ShellRoot {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         anchors { top: true; left: true }
         IdleInhibitor { window: inhibitWin; enabled: Flags.keepAwake }
+    }
+
+    /**
+     * The Wayland IdleInhibitor above only pauses the compositor's own idle
+     * (DPMS); hypridle runs its own timer and never sees it, so the lock still
+     * fired with keep-awake on. A logind idle inhibitor is the wire hypridle
+     * does respect, so hold one for as long as the flag is set.
+     */
+    Process {
+        running: Flags.keepAwake
+        command: ["systemd-inhibit", "--what=idle:sleep", "--who=Ricelin",
+                  "--why=keep awake", "--mode=block", "sleep", "infinity"]
     }
 
     /**
@@ -152,6 +187,24 @@ ShellRoot {
         }
         function peek(mon: string): void { root.peek(mon); }
         function hide(): void { root.close(); }
+
+        /**
+         * The two halves of the SUPER+M minimize toggle, driven by the
+         * minimize-toggle script which has already read the focused window. A
+         * desktop window drops into the minimized stash; a window already stashed
+         * comes back to the workspace it is handed, so the same key hides and
+         * restores. Both target the window by address so they act on the one the
+         * user pressed on, not whatever the compositor calls active afterwards.
+         */
+        function minimizeWindow(addr: string): void {
+            Hyprland.dispatch('hl.dsp.window.move({ workspace = "special:minimized", follow = false, window = "address:' + addr + '" })');
+        }
+        function restoreWindow(arg: string): void {
+            var p = arg.split("|");
+            if (p.length < 2 || p[0].length === 0)
+                return;
+            Hyprland.dispatch('hl.dsp.window.move({ workspace = ' + p[1] + ', window = "address:' + p[0] + '" })');
+        }
     }
 
     Variants {
@@ -188,7 +241,7 @@ ShellRoot {
             readonly property real topGap: 8 * s
             readonly property string surface: root.openMon === modelData.name ? root.openSurface : ""
             readonly property bool surfaceOpen: surface.length > 0
-            readonly property bool modal: surfaceOpen || pill.held || pill.quickChoosing
+            readonly property bool modal: pill.authPending ? false : (surfaceOpen || pill.held || pill.quickChoosing)
 
             /**
              * True while this monitor's active workspace holds a real
@@ -219,7 +272,7 @@ ShellRoot {
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: (surfaceOpen || pill.quickChoosing) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+            WlrLayershell.keyboardFocus: ((surfaceOpen || pill.quickChoosing) && !pill.authPending) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
             WlrLayershell.namespace: "pill"
 
             anchors { top: true; left: true; right: true; bottom: true }

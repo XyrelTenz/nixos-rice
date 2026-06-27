@@ -1,12 +1,13 @@
 local mod = "SUPER"
 
+hl.bind(mod .. " + SHIFT + Q", hl.dsp.window.kill())
 hl.bind(mod .. " + Q", hl.dsp.window.close())
 hl.bind(mod .. " + T", hl.dsp.exec_cmd("ghostty"))
-hl.bind(mod .. " + F", hl.dsp.exec_cmd("brave"))
-hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen())
+hl.bind(mod .. " + F", hl.dsp.window.fullscreen())
 hl.bind(mod .. " + E", hl.dsp.exec_cmd("dolphin"))
-hl.bind(mod .. " + SHIFT + T", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mod .. " + M", hl.dsp.window.move({ workspace = "special:minimized", follow = false }))
+hl.bind(mod .. " + SHIFT + F", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mod .. " + M", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/minimize-toggle.sh"))
+hl.bind(mod .. " + SHIFT + M", hl.dsp.workspace.toggle_special("minimized"))
 
 hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
@@ -16,8 +17,33 @@ hl.bind(mod .. " + Right", hl.dsp.focus({ workspace = "r+1" }))
 hl.bind(mod .. " + mouse_up", hl.dsp.focus({ workspace = "r-1" }))
 hl.bind(mod .. " + mouse_down", hl.dsp.focus({ workspace = "r+1" }))
 
-hl.bind(mod .. " + SHIFT + Left", hl.dsp.exec_cmd("hyprctl dispatch resizeactive -20 0"), { repeating = true })
-hl.bind(mod .. " + SHIFT + Right", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 20 0"), { repeating = true })
+hl.bind(mod .. " + 1", hl.dsp.focus({ workspace = 1 }))
+hl.bind(mod .. " + 2", hl.dsp.focus({ workspace = 2 }))
+hl.bind(mod .. " + 3", hl.dsp.focus({ workspace = 3 }))
+hl.bind(mod .. " + 4", hl.dsp.focus({ workspace = 4 }))
+hl.bind(mod .. " + 5", hl.dsp.focus({ workspace = 5 }))
+hl.bind(mod .. " + 6", hl.dsp.focus({ workspace = 6 }))
+hl.bind(mod .. " + 7", hl.dsp.focus({ workspace = 7 }))
+hl.bind(mod .. " + 8", hl.dsp.focus({ workspace = 8 }))
+hl.bind(mod .. " + 9", hl.dsp.focus({ workspace = 9 }))
+hl.bind(mod .. " + 0", hl.dsp.focus({ workspace = 10 }))
+
+hl.bind(mod .. " + SHIFT + 1", hl.dsp.window.move({ workspace = 1, follow = false }))
+hl.bind(mod .. " + SHIFT + 2", hl.dsp.window.move({ workspace = 2, follow = false }))
+hl.bind(mod .. " + SHIFT + 3", hl.dsp.window.move({ workspace = 3, follow = false }))
+hl.bind(mod .. " + SHIFT + 4", hl.dsp.window.move({ workspace = 4, follow = false }))
+hl.bind(mod .. " + SHIFT + 5", hl.dsp.window.move({ workspace = 5, follow = false }))
+hl.bind(mod .. " + SHIFT + 6", hl.dsp.window.move({ workspace = 6, follow = false }))
+hl.bind(mod .. " + SHIFT + 7", hl.dsp.window.move({ workspace = 7, follow = false }))
+hl.bind(mod .. " + SHIFT + 8", hl.dsp.window.move({ workspace = 8, follow = false }))
+hl.bind(mod .. " + SHIFT + 9", hl.dsp.window.move({ workspace = 9, follow = false }))
+hl.bind(mod .. " + SHIFT + 0", hl.dsp.window.move({ workspace = 10, follow = false }))
+
+hl.bind(mod .. " + P", hl.dsp.workspace.toggle_special("private"))
+hl.bind(mod .. " + SHIFT + P", hl.dsp.window.move({ workspace = "special:private", follow = false }))
+
+hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("stash"))
+hl.bind(mod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:stash", follow = false }))
 
 hl.bind(mod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a"))
 
@@ -46,12 +72,3 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"), { loc
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
-
--- Workspace Switching
-for i = 1, 10 do
-	local key = i % 10
-	hl.bind(mod .. " + " .. key, hl.dsp.focus({ workspace = tostring(i) }))
-	hl.bind(mod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = tostring(i) }))
-	hl.bind(mod .. " + CTRL + " .. key, hl.dsp.window.move({ workspace = tostring(i) }))
-end
-

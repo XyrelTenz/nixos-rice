@@ -202,9 +202,15 @@ def extract_changelog(clone, base, head):
     return lines
 
 
-def tracked_config_files(clone):
-    """Every tracked file under configs/ as a path relative to configs/."""
-    out = git(clone, "ls-files", "configs/")
+def tracked_config_files(clone, ref):
+    """
+    Every file under configs/ at ref, relative to configs/. Listed from the commit
+    tree, not the clone's checked-out index, so files a newer upstream added (a new
+    QML surface, say) are deployed too; ls-files would only ever see the stale
+    working tree and silently skip them, leaving the live config referencing a type
+    whose file never landed.
+    """
+    out = git(clone, "ls-tree", "-r", "--name-only", ref, "configs/")
     rels = []
     for line in out.splitlines():
         line = line.strip()
@@ -300,7 +306,7 @@ def sync_code(clone, config_root, head, apply):
     """
     protected = set(PROTECTED)
     changed = False
-    for rel in tracked_config_files(clone):
+    for rel in tracked_config_files(clone, head):
         if rel in protected:
             continue
         new = show_at(clone, head, rel)
@@ -323,11 +329,236 @@ def baseline_modules(manifest, head):
         mods[rel] = head
 
 
-def run(mode, remote, config_root, take):
+def baseline(config_root, sha):
+    """
+    Record the freshly installed commit as the update baseline. Without this the
+    very first check has no synced sha to count from, so behind_count returns zero
+    and a box that is really several commits back reports itself up to date, with no
+    way to ever reach an apply that would set the baseline. The installer calls this
+    right after it deploys, handing over the commit it just installed.
+
+    No clone and no network: a baseline is only the synced sha plus the same sha as
+    the merge base for every protected file. Skipped when a manifest already exists,
+    so a re-run never resets a tracked baseline, and in devmode, since that path
+    updates through plain git and never wants a manifest at all.
+    """
+    if not sha:
+        return error_result("error", "baseline needs --sha")
+    if is_devmode(config_root):
+        return {"status": "devmode", "syncedSha": ""}
+    if manifest_path().exists():
+        return {"status": "kept", "syncedSha": ""}
+    manifest = {"syncedSha": sha, "modules": {rel: sha for rel in PROTECTED}}
+    save_manifest(manifest)
+    return {"status": "baselined", "syncedSha": sha}
+
+
+# ── Missing dependencies ──────────────────────────────────────────────────────
+#
+# A Ricelin update can introduce a new package the rice now needs (cava did once).
+# The engine reads the upstream package manifest from the clone, works out which
+# core packages are not installed on this machine, and offers to install the chosen
+# ones on apply.
+#
+# The family detection and name resolution below are a deliberately inlined copy of
+# installer/distro.py. The engine ships to user machines on its own and must never
+# import the installer package, so the two are kept in sync by hand rather than
+# shared. Only the slice this feature needs is copied.
+
+FAMILY_TOKENS = {
+    "arch": ("arch", "cachyos", "endeavouros", "manjaro", "garuda", "artix",
+             "arcolinux", "archcraft", "rebornos", "athena", "blackarch", "archbang",
+             "crystal", "snigdha", "parabola", "obarun", "arch32", "hyperbola", "steamos",
+             "omarchy", "xerolinux", "archman", "biglinux", "ctlos", "tromjaro",
+             "bluestar", "arkane", "blendos", "acreetionos", "mabox"),
+    "debian": ("debian", "ubuntu", "linuxmint", "pop", "elementary", "zorin", "raspbian"),
+    "fedora": ("fedora", "nobara", "rhel", "centos", "rocky", "almalinux"),
+    "suse": ("suse", "opensuse", "sles", "sled", "tumbleweed", "leap"),
+}
+
+
+def os_release(path="/etc/os-release"):
+    data = {}
+    try:
+        with open(path) as fh:
+            for line in fh:
+                if "=" in line and not line.startswith("#"):
+                    k, v = line.rstrip().split("=", 1)
+                    data[k] = v.strip().strip('"')
+    except OSError:
+        pass
+    return data
+
+
+def detect_family(path="/etc/os-release"):
+    """Map os-release ID then ID_LIKE onto a package family, or "unknown"."""
+    data = os_release(path)
+    ids = [data.get("ID", "").lower()]
+    ids += data.get("ID_LIKE", "").lower().split()
+    for token in ids:
+        for fam, names in FAMILY_TOKENS.items():
+            if token in names:
+                return fam
+    return "unknown"
+
+
+def native_name(pkg, family):
+    """The native package name for this family, or None when there is none."""
+    return (pkg.get("names") or {}).get(family)
+
+
+def manifest_at(clone, sha):
+    """
+    The installer package manifest as parsed JSON at sha, read from the clone via
+    git so it reflects the upstream version being applied, never the live tree. None
+    when the file is absent or unparseable, so an older upstream that predates the
+    manifest simply yields no dependency step.
+    """
+    result = subprocess.run(
+        ["git", "-C", str(clone), "show", f"{sha}:installer/packages.json"],
+        capture_output=True, check=False,
+    )
+    if result.returncode != 0:
+        return None
+    try:
+        return json.loads(result.stdout)
+    except ValueError:
+        return None
+
+
+def pkg_installed(name, family):
+    """
+    Whether the native package is installed, read-only and quiet. A failed query
+    (wrong tool, no db) counts as not installed rather than raising, mirroring the
+    installer's own is_installed.
+    """
+    try:
+        if family == "arch":
+            r = subprocess.run(["pacman", "-Qq", name], capture_output=True, text=True)
+            return r.returncode == 0
+        if family == "debian":
+            r = subprocess.run(["dpkg-query", "-W", "-f=${Status}", name],
+                               capture_output=True, text=True)
+            return "install ok installed" in r.stdout
+        r = subprocess.run(["rpm", "-q", name], capture_output=True, text=True)
+        return r.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def detect_missing_deps(clone, head):
+    """
+    Core packages from the upstream manifest that have a native name on this family
+    and are not installed. Packages with no native name here (fallback-only ones the
+    package db can't speak for) are skipped, since there is nothing to query or to
+    pkexec-install. Returns rows of {id, name, desc, group}.
+    """
+    family = detect_family()
+    manifest = manifest_at(clone, head)
+    if family == "unknown" or not manifest:
+        return []
+    rows = []
+    for pkg in manifest.get("packages", []):
+        if pkg.get("group") != "core":
+            continue
+        name = native_name(pkg, family)
+        if not name or pkg_installed(name, family):
+            continue
+        rows.append({"id": pkg["id"], "name": name,
+                     "desc": pkg.get("desc", ""), "group": pkg.get("group")})
+    return rows
+
+
+def native_install_argv(family, names):
+    """The bare repo-install argv (no privilege wrapper) for one or more native packages."""
+    if family == "arch":
+        return ["pacman", "-S", "--needed", "--noconfirm", *names]
+    if family == "debian":
+        return ["env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "-y", *names]
+    if family == "fedora":
+        return ["dnf", "install", "-y", *names]
+    return ["zypper", "--non-interactive", "install", *names]
+
+
+def manual_hint(pkg, family, fallbacks):
+    """
+    The instruction for a dependency this engine can't install headless, returned as
+    its failure reason so the user is told what to run rather than left with a silent
+    no-op. An Arch AUR package needs a helper that runs makepkg as the user (it
+    refuses root, and the helper's own sudo has no askpass in a pill-spawned process),
+    so the engine never tries it from here and hands over the exact command. A
+    fallback-only package has no native package and points at its fallback method.
+    """
+    name = native_name(pkg, family)
+    if family == "arch" and name and pkg.get("aur"):
+        helper = shutil.which("yay") or shutil.which("paru") or "yay"
+        return f"AUR package, install it yourself: {helper} -S {name}"
+    hint = fallbacks.get(pkg.get("fallback")) or "install it manually"
+    return f"no native package on this system, {hint}"
+
+
+def native_install_reason(result, os_error):
+    """Why a batched repo install didn't land, kept short for the surface."""
+    if os_error:
+        return os_error
+    # pkexec exits 126 when the prompt is dismissed and 127 when authorisation is
+    # denied, the two cases that otherwise read as a silent success.
+    if result.returncode in (126, 127):
+        return "the password prompt was cancelled"
+    tail = (result.stderr or "").strip().splitlines()
+    return tail[-1] if tail else "install failed"
+
+
+def install_missing_deps(clone, head, ids):
+    """
+    Install the chosen dependencies and return the failures as rows of {id, error};
+    an empty list means everything chosen installed. Every repo (native, non-AUR)
+    package goes through ONE pkexec call per family, so the user answers a single
+    password prompt instead of one per package. AUR and fallback-only packages can't
+    be driven headless from a GUI-spawned process, so they are reported with a manual
+    hint instead of attempted and failed silently. Unknown ids and a missing manifest
+    are reported as failures too, never dropped.
+    """
+    family = detect_family()
+    manifest = manifest_at(clone, head)
+    if family == "unknown" or not manifest:
+        return [{"id": pid, "error": "couldn't read the package manifest"} for pid in ids]
+    by_id = {p["id"]: p for p in manifest.get("packages", [])}
+    fallbacks = manifest.get("fallbacks", {})
+
+    failures = []
+    repo = []  # (id, native_name) pairs to batch into one privileged install
+    for pid in ids:
+        pkg = by_id.get(pid)
+        if pkg is None:
+            failures.append({"id": pid, "error": "unknown package"})
+            continue
+        name = native_name(pkg, family)
+        if not name or (family == "arch" and pkg.get("aur")):
+            failures.append({"id": pid, "error": manual_hint(pkg, family, fallbacks)})
+            continue
+        repo.append((pid, name))
+
+    if repo:
+        cmd = ["pkexec", *native_install_argv(family, [n for _, n in repo])]
+        result, os_error = None, ""
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        except OSError as exc:
+            os_error = str(exc)
+        # Verify per package so a partial transaction reports only what's still missing.
+        for pid, name in repo:
+            if not pkg_installed(name, family):
+                failures.append({"id": pid, "error": native_install_reason(result, os_error)})
+    return failures
+
+
+def run(mode, remote, config_root, take, install_ids):
     if is_devmode(config_root):
         return {"status": "devmode", "behind": 0, "fromDate": "", "toDate": "",
                 "version": "", "changelog": [], "codeChanged": False, "modules": [],
-                "conflicts": [], "applied": False, "restartNeeded": False, "error": None}
+                "conflicts": [], "missingDeps": [], "depFailures": [],
+                "applied": False, "restartNeeded": False, "error": None}
 
     apply = mode == "apply"
     try:
@@ -347,6 +578,11 @@ def run(mode, remote, config_root, take):
     to_date = commit_date(clone, head)
     version = f"{short_sha(clone, head)} {to_date}"
 
+    # Install the chosen new packages first so the post-install scan reflects them,
+    # then report whatever is still missing. Detection runs in both modes.
+    dep_failures = install_missing_deps(clone, head, install_ids) if (apply and install_ids) else []
+    missing = detect_missing_deps(clone, head)
+
     if first_run:
         code_changed = sync_code(clone, config_root, head, apply)
         rows = [{"name": module_name(rel), "path": rel, "state": "clean"}
@@ -358,7 +594,8 @@ def run(mode, remote, config_root, take):
         return {
             "status": "ok", "behind": behind, "fromDate": from_date, "toDate": to_date,
             "version": version, "changelog": changelog, "codeChanged": code_changed,
-            "modules": rows, "conflicts": [], "applied": apply,
+            "modules": rows, "conflicts": [], "missingDeps": missing,
+            "depFailures": dep_failures, "applied": apply,
             "restartNeeded": code_changed, "error": None,
         }
 
@@ -377,7 +614,8 @@ def run(mode, remote, config_root, take):
     return {
         "status": "ok", "behind": behind, "fromDate": from_date, "toDate": to_date,
         "version": version, "changelog": changelog, "codeChanged": code_changed,
-        "modules": rows, "conflicts": conflicts, "applied": apply,
+        "modules": rows, "conflicts": conflicts, "missingDeps": missing,
+        "depFailures": dep_failures, "applied": apply,
         "restartNeeded": code_changed or protected_changed, "error": None,
     }
 
@@ -385,7 +623,8 @@ def run(mode, remote, config_root, take):
 def error_result(status, message):
     return {"status": status, "behind": 0, "fromDate": "", "toDate": "", "version": "",
             "changelog": [], "codeChanged": False, "modules": [], "conflicts": [],
-            "applied": False, "restartNeeded": False, "error": message}
+            "missingDeps": [], "depFailures": [], "applied": False,
+            "restartNeeded": False, "error": message}
 
 
 def classify_git_failure(stderr):
@@ -420,11 +659,16 @@ def parse_args(argv):
     remote = DEFAULT_REMOTE
     config_root = Path.home() / ".config"
     take = set()
+    install_ids = set()
+    sha = None
     i = 0
     while i < len(argv):
         arg = argv[i]
-        if arg in ("check", "apply"):
+        if arg in ("check", "apply", "baseline"):
             mode = arg
+        elif arg == "--sha":
+            i += 1
+            sha = take_value(argv, i, "--sha")
         elif arg == "--remote":
             i += 1
             remote = take_value(argv, i, "--remote")
@@ -435,8 +679,12 @@ def parse_args(argv):
             i += 1
             value = take_value(argv, i, "--take")
             take = {p.strip() for p in value.split(",") if p.strip()}
+        elif arg == "--install-deps":
+            i += 1
+            value = take_value(argv, i, "--install-deps")
+            install_ids = {p.strip() for p in value.split(",") if p.strip()}
         i += 1
-    return mode, remote, config_root, take
+    return mode, remote, config_root, take, install_ids, sha
 
 
 def main(argv):
@@ -446,8 +694,11 @@ def main(argv):
     trailing flag with no value becomes an error JSON rather than an IndexError.
     """
     try:
-        mode, remote, config_root, take = parse_args(argv)
-        result = run(mode, remote, config_root, take)
+        mode, remote, config_root, take, install_ids, sha = parse_args(argv)
+        if mode == "baseline":
+            result = baseline(config_root, sha)
+        else:
+            result = run(mode, remote, config_root, take, install_ids)
     except BadArgs as exc:
         print(json.dumps(error_result("error", str(exc))))
         return 0

@@ -45,6 +45,7 @@ in {
     flutter
     gradle
 
+
     clang-tools
     typescript
     typescript-language-server
@@ -60,7 +61,6 @@ in {
     gcc
     jdt-language-server
     rust-analyzer
-    slint-lsp
     tailwindcss-language-server
     vscode-langservers-extracted
     stylua
@@ -74,6 +74,7 @@ in {
     rustfmt
 
     zed-editor-fhs
+    code-cursor-fhs
 
     grim
     satty

@@ -46,7 +46,7 @@ in {
     gradle
     docker-compose
     prisma-engines
-    nodePackages.prisma
+    prisma
 
 
     clang-tools

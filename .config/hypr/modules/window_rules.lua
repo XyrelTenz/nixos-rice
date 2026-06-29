@@ -56,6 +56,14 @@ hl.window_rule({
 })
 
 hl.window_rule({
+    name   = "float-emulator",
+    match  = { class = "([Ee]mulator|qemu-system-x86_64)" },
+    float  = true,
+    size   = { 420, 840 },
+    center = true,
+})
+
+hl.window_rule({
     name         = "idle-inhibit-fullscreen",
     match        = { class = ".*" },
     idle_inhibit = "fullscreen",

@@ -38,6 +38,8 @@ PROTECTED = [
     "hypr/modules/env.lua",
     "hypr/modules/autostart.lua",
     "hypr/modules/animations.lua",
+    "hypr/modules/stash-apps.lua",
+    "hypr/modules/spaces.lua",
     "hypr/hypridle.conf",
 ]
 

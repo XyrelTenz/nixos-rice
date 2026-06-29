@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell.Widgets
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
-import Quickshell.Services.Mpris
 import Quickshell.Io
 import "Singletons"
 
@@ -29,19 +28,7 @@ Item {
     readonly property bool muted: sink && sink.audio ? sink.audio.muted : false
     readonly property real volume: sink && sink.audio ? Math.max(0, Math.min(1, sink.audio.volume)) : 0
 
-    property var stickyPlayer: null
-    readonly property var player: {
-        var list = Mpris.players.values;
-        if (!list || list.length === 0)
-            return null;
-        for (var i = 0; i < list.length; i++) {
-            if (list[i] && list[i].isPlaying)
-                return list[i];
-        }
-        if (stickyPlayer && list.indexOf(stickyPlayer) >= 0)
-            return stickyPlayer;
-        return list[0];
-    }
+    readonly property var player: Players.active
     readonly property bool playing: player !== null && player.isPlaying
     readonly property string trackLine: {
         if (!player)
@@ -88,7 +75,11 @@ Item {
         if (which === "track") {
             shownTrackLine = trackLine;
             shownPlaying = playing;
-            shownArtUrl = player && player.trackArtUrl ? player.trackArtUrl : "";
+            /** Clear then re-set so a reused art path still re-decodes (cache off). */
+            var url = player && player.trackArtUrl ? player.trackArtUrl : "";
+            shownArtUrl = "";
+            if (url)
+                Qt.callLater(function() { root.shownArtUrl = url; });
         }
         kind = which;
         flashing = true;
@@ -132,13 +123,7 @@ Item {
         function onMutedChanged() { root.flash("volume"); }
     }
 
-    onPlayerChanged: {
-        Qt.callLater(function() {
-            if (stickyPlayer !== player)
-                stickyPlayer = player;
-        });
-        trackEvent();
-    }
+    onPlayerChanged: trackEvent()
 
     Connections {
         target: root.player
@@ -258,7 +243,7 @@ Item {
                 source: root.shownArtUrl
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: true
+                cache: false
                 visible: status === Image.Ready && root.shownArtUrl !== ""
             }
             GlyphIcon {

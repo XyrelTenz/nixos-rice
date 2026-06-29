@@ -4,7 +4,6 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 import Quickshell
-import Quickshell.Services.Mpris
 import Quickshell.Networking
 import Quickshell.Hyprland
 import "Singletons"
@@ -57,7 +56,7 @@ Item {
     readonly property bool animationOpen: surface === "animation"
     readonly property bool fontpickerOpen: surface === "fontpicker"
     readonly property bool settingsLike: settingsOpen || appearanceOpen || updatesOpen
-    readonly property bool hasMedia: Mpris.players.values.length > 0
+    readonly property bool hasMedia: Players.list.length > 0
 
     /**
      * Subview the link surface should land on when next opened. The wifi glance
@@ -1550,10 +1549,6 @@ Item {
                 s: pill.s
                 live: pill.mode === "toast"
                 notif: Notifs.popups.length > 0 ? Notifs.popups[Notifs.popups.length - 1] : null
-                onOpenCenter: {
-                    pill.linkInitialView = "main";
-                    pill.requestSurface("link");
-                }
             }
 
             Text {

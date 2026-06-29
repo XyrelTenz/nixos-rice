@@ -111,14 +111,24 @@ Singleton {
     }
 
     /**
-     * Open the app behind a notification entry: invoke its default action when
-     * present, then focus the app's Hyprland window (workspace switch included)
-     * by matching desktopEntry/appName against window classes. The entry is
-     * dismissed afterwards, mirroring stock notification-center behavior.
+     * Focus the app's Hyprland window (workspace switch included) by matching the
+     * notification's desktopEntry/appName against the live window classes.
      */
-    function activateEntry(e) {
-        if (!e || !e.n) return;
-        var n = e.n;
+    function raiseWindow(n) {
+        if (!n) return;
+        var token = String(n.desktopEntry && n.desktopEntry.length ? n.desktopEntry : (n.appName || "")).toLowerCase();
+        if (token.length === 0) return;
+        Quickshell.execDetached(["sh", "-c",
+            "addr=$(hyprctl clients -j | jq -r --arg q \"$1\" 'first(.[] | select(((.class | if . then ascii_downcase else \"\" end) | contains($q)) or ((.initialClass | if . then ascii_downcase else \"\" end) | contains($q))) | .address)'); [ -n \"$addr\" ] && hyprctl dispatch \"hl.dsp.focus({ window = \\\"address:$addr\\\" })\"",
+            "sh", token]);
+    }
+
+    /**
+     * Open the app behind a notification: invoke its default action when present,
+     * then jump to the app's window, mirroring stock notification-center behavior.
+     */
+    function activateNotif(n) {
+        if (!n) return;
         var acts = n.actions || [];
         for (var i = 0; i < acts.length; i++) {
             if (acts[i].identifier === "default") {
@@ -126,11 +136,13 @@ Singleton {
                 break;
             }
         }
-        var token = String(n.desktopEntry && n.desktopEntry.length ? n.desktopEntry : (n.appName || "")).toLowerCase();
-        if (token.length > 0)
-            Quickshell.execDetached(["sh", "-c",
-                "addr=$(hyprctl clients -j | jq -r --arg q \"$1\" '[.[] | select(((.class // \"\") | ascii_downcase | contains($q)) or ((.initialClass // \"\") | ascii_downcase | contains($q)))][0].address // empty'); [ -n \"$addr\" ] && hyprctl dispatch \"hl.dsp.focus({ window = \\\"address:$addr\\\" })\"",
-                "sh", token]);
+        raiseWindow(n);
+    }
+
+    /** Inbox-row entry wrapper: activate the app, then dismiss the entry. */
+    function activateEntry(e) {
+        if (!e || !e.n) return;
+        activateNotif(e.n);
         dismissEntry(e);
     }
 

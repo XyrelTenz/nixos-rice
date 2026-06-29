@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import Quickshell.Widgets
-import Quickshell.Services.Mpris
 import "Singletons"
 
 /**
@@ -18,45 +17,61 @@ import "Singletons"
 PillSurface {
     id: root
 
-    /**
-     * Pick order: playing > paused-with-track > controllable. Keeps a browser
-     * that exposes an empty MPRIS endpoint from shadowing a paused player that
-     * still has a track.
-     */
-    readonly property var player: {
-        var list = Mpris.players.values;
-        if (!list || list.length === 0)
-            return null;
-        var withTrack = null;
-        var controllable = null;
-        for (var i = 0; i < list.length; i++) {
-            var p = list[i];
-            if (!p)
-                continue;
-            if (p.isPlaying)
-                return p;
-            if (!withTrack && p.canControl && p.trackTitle && p.trackTitle.length > 0)
-                withTrack = p;
-            if (!controllable && p.canControl)
-                controllable = p;
-        }
-        return withTrack ? withTrack : (controllable ? controllable : list[0]);
-    }
+    /** The last-commanded player, shared with the media keys via [[Players]]. */
+    readonly property var player: Players.active
 
     readonly property bool hasPlayer: player !== null
     readonly property bool playing: hasPlayer && player.isPlaying
     readonly property string title: hasPlayer && player.trackTitle ? player.trackTitle : "Nothing playing"
     readonly property string artist: hasPlayer
         ? Theme.joinArtists(player.trackArtists, player.trackArtist) : ""
+    readonly property string trackUrl: (hasPlayer && player.metadata) ? (player.metadata["xesam:url"] || "") : ""
+
+    /** The site a browser plays from, so the source reads "youtube" not "mozilla zen". */
     readonly property string playerService: {
         if (!hasPlayer)
             return "";
+        var site = siteName(trackUrl);
+        if (site.length === 0)
+            site = siteFromTitle(title);
+        if (site.length > 0)
+            return site;
         var n = player.identity ? player.identity : (player.desktopEntry ? player.desktopEntry : "");
         return n.toLowerCase();
     }
-    readonly property string artUrl: hasPlayer && player.trackArtUrl ? player.trackArtUrl : ""
+    /**
+     * A Twitch stream has no MPRIS art; the streamer avatar is the nicest cover
+     * but its url needs a lookup (decapi resolves the channel without a token),
+     * so it arrives async. The derived live preview stands in until it lands.
+     */
+    property string twitchAvatar: ""
+    property string twitchChannel: ""
+
+    /** Many videos and streams expose no MPRIS art, so fall back to the derived thumbnail. */
+    readonly property string artUrl: {
+        if (!hasPlayer)
+            return "";
+        if (player.trackArtUrl)
+            return player.trackArtUrl;
+        if (twitchAvatar.length > 0 && isTwitch(trackUrl))
+            return twitchAvatar;
+        return derivedThumb(trackUrl);
+    }
+    /** A bogus near-INT64 length is how live streams report "no end". */
+    readonly property bool live: hasPlayer && (lengthSec <= 0 || lengthSec > 86400)
+    /** Source shown title-cased: "Youtube", "Twitch", "Spotify". */
+    readonly property string serviceLabel: playerService.length > 0
+        ? playerService.charAt(0).toUpperCase() + playerService.slice(1) : ""
     readonly property bool hasArt: artUrl !== ""
         && (coverPair.front.status === Image.Ready || coverPair.back.status === Image.Ready)
+    /**
+     * Identity of the current track. Browsers reuse one art file path and
+     * overwrite it per video, so the artUrl string alone misses the change;
+     * folding in player and title catches it, and a fresh decode (cache off)
+     * pulls the new pixels.
+     */
+    readonly property string trackKey: hasPlayer
+        ? ((player.dbusName || "") + "|" + title + "|" + artUrl) : ""
     readonly property real lengthSec: hasPlayer && player.length > 0 ? player.length : 0
     readonly property real positionSec: hasPlayer ? player.position : 0
     readonly property real playFrac: lengthSec > 0 ? Math.max(0, Math.min(1, positionSec / lengthSec)) : 0
@@ -87,6 +102,89 @@ PillSurface {
     ameForm: "seam"
     amePoint: Qt.point(seamHeadX, seamHeadY)
 
+    /** Registrable name from a page url: youtube.com and music.youtube.com both give "youtube". */
+    function siteName(url) {
+        var m = url.match(/^https?:\/\/(?:www\.)?([^\/]+)/);
+        if (!m)
+            return "";
+        var host = m[1].toLowerCase();
+        if (host === "youtu.be")
+            return "youtube";
+        var parts = host.split(".");
+        return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+    }
+
+    /**
+     * Browsers that expose no page url still tag the site onto the tab title,
+     * like "... | Spotify". Trust only known media sites so an ordinary title
+     * ending in a word isn't mistaken for a source.
+     */
+    function siteFromTitle(t) {
+        var m = t.match(/[|\-–—]\s*([A-Za-z][A-Za-z0-9]+)\s*$/);
+        if (!m)
+            return "";
+        var s = m[1].toLowerCase();
+        var known = { youtube: 1, spotify: 1, twitch: 1, soundcloud: 1, bandcamp: 1 };
+        return known[s] ? s : "";
+    }
+
+    /** A youtube.com/watch or youtu.be video id, not just any url carrying a v= param. */
+    function youtubeId(url) {
+        var m = url.match(/^https?:\/\/(?:www\.|m\.|music\.)?youtube\.com\/watch\?(?:.*&)?v=([\w-]{11})/)
+            || url.match(/^https?:\/\/youtu\.be\/([\w-]{11})/);
+        return m ? m[1] : "";
+    }
+
+    /** Twitch channel from a stream url; the reserved site paths are not channels. */
+    function twitchChannelOf(url) {
+        var m = url.match(/^https?:\/\/(?:www\.)?twitch\.tv\/([^\/?#]+)/);
+        if (!m)
+            return "";
+        var ch = m[1].toLowerCase();
+        var reserved = { videos: 1, directory: 1, u: 1, p: 1, settings: 1, subscriptions: 1, following: 1, downloads: 1 };
+        return reserved[ch] ? "" : ch;
+    }
+
+    /**
+     * Cover for players that expose no MPRIS art: YouTube's thumbnail from the
+     * watch id (mqdefault is clean 16:9 and always exists), or a Twitch stream's
+     * live preview from the channel.
+     */
+    function derivedThumb(url) {
+        var yid = youtubeId(url);
+        if (yid)
+            return "https://img.youtube.com/vi/" + yid + "/mqdefault.jpg";
+        var ch = twitchChannelOf(url);
+        if (ch)
+            return "https://static-cdn.jtvnw.net/previews-ttv/live_user_" + ch + "-320x180.jpg";
+        return "";
+    }
+
+    function isTwitch(url) {
+        return twitchChannelOf(url).length > 0;
+    }
+
+    /** Resolve the streamer avatar once per channel; failure keeps the live preview. */
+    function resolveTwitch() {
+        var ch = twitchChannelOf(trackUrl);
+        if (ch === twitchChannel)
+            return;
+        twitchChannel = ch;
+        twitchAvatar = "";
+        if (ch.length === 0)
+            return;
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                var r = xhr.responseText.trim();
+                if (r.indexOf("https:") === 0 && r.length > 12 && root.twitchChannel === ch)
+                    root.twitchAvatar = r;
+            }
+        };
+        xhr.open("GET", "https://decapi.me/twitch/avatar/" + ch);
+        xhr.send();
+    }
+
     function fmt(sec) {
         if (!(sec > 0))
             return "0:00";
@@ -104,10 +202,19 @@ PillSurface {
      * Art loads only while the surface is open. A 24/7 daemon shouldn't fetch
      * and decode remote cover URLs on every background track change, and the
      * 2026-06-12 segfault hit exactly here during a closed-surface Spotify
-     * metadata update.
+     * metadata update. The track key drives the reload so a reused art path
+     * still refreshes when the song changes.
      */
-    onArtUrlChanged: if (active) coverPair.load(artUrl)
-    onActiveChanged: if (active) coverPair.load(artUrl)
+    function loadArt() {
+        if (!active)
+            return;
+        coverPair.load(artUrl, trackKey);
+        bleedSrc.source = "";
+        bleedSrc.source = artUrl;
+    }
+    onTrackKeyChanged: loadArt()
+    onTrackUrlChanged: if (active) resolveTwitch()
+    onActiveChanged: if (active) { resolveTwitch(); loadArt(); }
     onTitleChanged: if (playing && active) pulseAnim.restart()
 
     Timer {
@@ -186,11 +293,10 @@ PillSurface {
         Image {
             id: bleedSrc
             anchors.fill: parent
-            source: root.active ? root.artUrl : ""
             sourceSize: Qt.size(128, 128)
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
-            cache: true
+            cache: String(source).indexOf("file:") !== 0
             visible: false
         }
 
@@ -222,20 +328,32 @@ PillSurface {
 
             property var front: coverA
             property var back: coverB
+            /** Track key currently shown in front, and the one staged on back. */
+            property string shownKey: ""
+            property string pendingKey: ""
 
-            /** Stage `url` on the hidden back image; reveal() runs once it decodes. */
-            function load(url) {
+            /**
+             * Stage the art for `key` on the hidden back image; reveal() runs
+             * once it decodes. Keyed on the track, not the url, so a reused art
+             * path still reloads on a new song; the clear-then-set forces a
+             * fresh decode past the (disabled) image cache.
+             */
+            function load(url, key) {
+                if (key === coverPair.shownKey && front.status === Image.Ready) {
+                    back.source = "";
+                    coverPair.pendingKey = key;
+                    return;
+                }
                 coverFade.stop();
                 back.opacity = 0;
+                coverPair.pendingKey = key;
                 if (!url) {
                     front.source = "";
                     back.source = "";
+                    coverPair.shownKey = key;
                     return;
                 }
-                if (String(front.source) === url) {
-                    back.source = "";
-                    return;
-                }
+                back.source = "";
                 back.source = url;
             }
 
@@ -250,6 +368,16 @@ PillSurface {
                 back = old;
                 old.source = "";
                 old.opacity = 0;
+                coverPair.shownKey = coverPair.pendingKey;
+            }
+
+            /** Art that won't decode drops to the fallback glyph, never the old cover. */
+            function fail() {
+                coverFade.stop();
+                front.source = "";
+                back.source = "";
+                back.opacity = 0;
+                coverPair.shownKey = coverPair.pendingKey;
             }
 
             Rectangle {
@@ -265,8 +393,15 @@ PillSurface {
                 sourceSize: Qt.size(Math.ceil(width * 2), Math.ceil(height * 2))
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: true
-                onStatusChanged: if (status === Image.Ready && coverPair.back === this) coverPair.reveal()
+                cache: String(source).indexOf("file:") !== 0
+                onStatusChanged: {
+                    if (coverPair.back !== this)
+                        return;
+                    if (status === Image.Ready)
+                        coverPair.reveal();
+                    else if (status === Image.Error)
+                        coverPair.fail();
+                }
             }
 
             Image {
@@ -277,8 +412,15 @@ PillSurface {
                 sourceSize: Qt.size(Math.ceil(width * 2), Math.ceil(height * 2))
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: true
-                onStatusChanged: if (status === Image.Ready && coverPair.back === this) coverPair.reveal()
+                cache: String(source).indexOf("file:") !== 0
+                onStatusChanged: {
+                    if (coverPair.back !== this)
+                        return;
+                    if (status === Image.Ready)
+                        coverPair.reveal();
+                    else if (status === Image.Error)
+                        coverPair.fail();
+                }
             }
 
             GlyphIcon {
@@ -344,9 +486,12 @@ PillSurface {
             anchors.bottomMargin: 44 * root.s
             elide: Text.ElideRight
             text: {
-                const head = root.playerService.length > 0 ? root.playerService + " · " : "";
+                const svc = root.serviceLabel;
+                if (root.live)
+                    return svc.length > 0 ? svc + " - Live" : "Live";
+                const head = svc.length > 0 ? svc + " / " : "";
                 const cur = root.fmt(root.dragging ? root.dragFrac * root.lengthSec : root.positionSec);
-                return head + cur + " · " + root.fmt(root.lengthSec);
+                return head + cur + " - " + root.fmt(root.lengthSec);
             }
             color: Theme.dim
             font.family: Theme.font
@@ -515,7 +660,7 @@ PillSurface {
                 id: seekArea
                 anchors.fill: parent
                 anchors.margins: -8 * root.s
-                enabled: root.hasPlayer && root.player.canSeek && root.lengthSec > 0
+                enabled: root.hasPlayer && root.player.canSeek && root.lengthSec > 0 && !root.live
                 cursorShape: Qt.PointingHandCursor
                 function fracAt(mx) {
                     return Math.max(0, Math.min(1, (mx - 8 * root.s - stroke.inset) / stroke.usable));

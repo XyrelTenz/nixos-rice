@@ -6,11 +6,13 @@ import "Singletons"
 /**
  * Numeric value control for the settings tabs. At rest it is just the number, so
  * a column of them stays clean instead of a grid of boxes. Hover wakes a faint
- * accent backdrop and the ghost − / + glyphs: click them to step exactly, or drag
- * the number left/right to scrub. Every path runs through `snap`, so the emitted
- * value is always clamped to `from..to`, landed on the `step` grid and rounded to
- * `decimals` — the host just stores it and writes it back. `value` stays a plain
- * one-way binding to the backing field; edits flow out through `edited`.
+ * accent backdrop and the ghost − / + glyphs. One control-wide handler does the
+ * work: drag the number left or right to scrub, or tap near the − / + end to
+ * step exactly. The whole control is the target, so it reads minimal but stays
+ * easy to grab. Every path runs through `snap`, so the emitted value is always
+ * clamped to `from..to`, landed on the `step` grid and rounded to `decimals`.
+ * `value` stays a plain one-way binding to the backing field; edits flow out
+ * through `edited`.
  */
 Item {
     id: root
@@ -32,13 +34,16 @@ Item {
     property var openValue: undefined
     readonly property bool dirty: openValue !== undefined && !isNaN(openValue) && root.value !== openValue
 
-    readonly property bool hovered: hh.hovered || scrub.containsMouse || scrub.pressed
-                                     || minusMA.containsMouse || plusMA.containsMouse
-    readonly property real pxPerStep: 5 * root.s
+    readonly property bool hovered: hh.hovered || scrub.containsMouse || scrub.pressed || undoMA.containsMouse
+    readonly property real pxPerStep: 8 * root.s
+
+    /** Which end the pointer sits over while hovering, so the right glyph lights up. */
+    readonly property bool overMinus: scrub.containsMouse && scrub.mouseX < width * 0.4
+    readonly property bool overPlus: scrub.containsMouse && scrub.mouseX > width * 0.6
 
     HoverHandler { id: hh }
 
-    implicitWidth: content.implicitWidth + 14 * root.s
+    implicitWidth: Math.max(64 * root.s, content.implicitWidth + 14 * root.s)
     implicitHeight: content.implicitHeight + 8 * root.s
 
     function snap(v) {
@@ -59,6 +64,53 @@ Item {
         radius: Motion.rSmall * root.s
         color: Qt.alpha(Theme.onGlow, root.hovered ? 0.14 : 0)
         Behavior on color { ColorAnimation { duration: Motion.fast } }
+    }
+
+    /**
+     * Drag to scrub, tap an end to step. A small move turns the press into a
+     * scrub; a clean tap on the left or right fraction steps once. Sits under the
+     * row so the undo glyph above keeps its own click.
+     */
+    MouseArea {
+        id: scrub
+        anchors.fill: parent
+        anchors.leftMargin: -12 * root.s
+        anchors.rightMargin: -10 * root.s
+        anchors.topMargin: -3 * root.s
+        anchors.bottomMargin: -3 * root.s
+        hoverEnabled: true
+        preventStealing: true
+        cursorShape: Qt.SizeHorCursor
+
+        property real pressX: 0
+        property real pressVal: 0
+        property bool dragged: false
+
+        onPressed: mouse => {
+            pressX = mouse.x;
+            pressVal = root.value;
+            dragged = false;
+        }
+        onPositionChanged: mouse => {
+            if (!pressed)
+                return;
+            if (Math.abs(mouse.x - pressX) > 3 * root.s)
+                dragged = true;
+            if (!dragged)
+                return;
+            var steps = Math.round((mouse.x - pressX) / root.pxPerStep);
+            var cand = root.snap(pressVal + steps * root.step);
+            if (cand !== root.value)
+                root.edited(cand);
+        }
+        onClicked: mouse => {
+            if (dragged)
+                return;
+            if (mouse.x < width * 0.4)
+                root.bump(-1);
+            else if (mouse.x > width * 0.6)
+                root.bump(1);
+        }
     }
 
     Row {
@@ -82,7 +134,7 @@ Item {
             MouseArea {
                 id: undoMA
                 anchors.fill: parent
-                anchors.margins: -4 * root.s
+                anchors.margins: -6 * root.s
                 enabled: root.dirty
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
@@ -97,22 +149,12 @@ Item {
             width: root.hovered ? implicitWidth : 0
             opacity: root.hovered ? 1 : 0
             clip: true
-            color: minusMA.containsMouse ? Theme.bright : Qt.alpha(Theme.onGlow, 0.6)
+            color: root.overMinus ? Theme.bright : Qt.alpha(Theme.onGlow, 0.6)
             font.family: Theme.font
             font.pixelSize: 15 * root.s
             font.weight: Font.Medium
             Behavior on width { NumberAnimation { duration: Motion.fast; easing.type: Easing.OutCubic } }
             Behavior on opacity { NumberAnimation { duration: Motion.fast } }
-
-            MouseArea {
-                id: minusMA
-                anchors.fill: parent
-                anchors.margins: -4 * root.s
-                enabled: root.hovered
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.bump(-1)
-            }
         }
 
         Item {
@@ -145,30 +187,6 @@ Item {
                     font.weight: Font.Medium
                 }
             }
-
-            MouseArea {
-                id: scrub
-                anchors.fill: parent
-                hoverEnabled: true
-                preventStealing: true
-                cursorShape: Qt.SizeHorCursor
-
-                property real pressX: 0
-                property real pressVal: 0
-
-                onPressed: mouse => {
-                    pressX = mouse.x;
-                    pressVal = root.value;
-                }
-                onPositionChanged: mouse => {
-                    if (!pressed)
-                        return;
-                    var steps = Math.round((mouse.x - pressX) / root.pxPerStep);
-                    var cand = root.snap(pressVal + steps * root.step);
-                    if (cand !== root.value)
-                        root.edited(cand);
-                }
-            }
         }
 
         Text {
@@ -178,22 +196,12 @@ Item {
             width: root.hovered ? implicitWidth : 0
             opacity: root.hovered ? 1 : 0
             clip: true
-            color: plusMA.containsMouse ? Theme.bright : Qt.alpha(Theme.onGlow, 0.6)
+            color: root.overPlus ? Theme.bright : Qt.alpha(Theme.onGlow, 0.6)
             font.family: Theme.font
             font.pixelSize: 15 * root.s
             font.weight: Font.Medium
             Behavior on width { NumberAnimation { duration: Motion.fast; easing.type: Easing.OutCubic } }
             Behavior on opacity { NumberAnimation { duration: Motion.fast } }
-
-            MouseArea {
-                id: plusMA
-                anchors.fill: parent
-                anchors.margins: -4 * root.s
-                enabled: root.hovered
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.bump(1)
-            }
         }
     }
 }

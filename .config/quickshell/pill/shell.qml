@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import Quickshell.Services.Mpris
 import "Singletons"
 
 /**
@@ -182,7 +181,7 @@ ShellRoot {
         function clipboard(mon: string): void { root.toggleSurface(mon, "clipboard"); }
         function wallpaper(mon: string): void { root.toggleSurface(mon, "wallpaper"); }
         function media(mon: string): void {
-            if (Mpris.players.values.length > 0)
+            if (Players.list.length > 0)
                 root.toggleSurface(mon, "media");
         }
         function peek(mon: string): void { root.peek(mon); }

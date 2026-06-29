@@ -87,6 +87,7 @@ vim.lsp.enable({
 	"vue_ls",
 	"rust_analyzer",
 	"clangd",
+	"prismals",
 })
 
 require("telescope").load_extension("projects")

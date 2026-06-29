@@ -45,6 +45,8 @@ in {
     flutter
     gradle
     docker-compose
+    prisma-engines
+    nodePackages.prisma
 
 
     clang-tools

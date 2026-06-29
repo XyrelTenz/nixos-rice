@@ -10,6 +10,7 @@ local options = {
 		rust = { "rustfmt" },
 		toml = { "tombi" },
 		cpp = { "clang-format" },
+		prisma = { "prisma-fmt" },
 	},
 
 	format_on_save = {

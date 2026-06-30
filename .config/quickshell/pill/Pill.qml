@@ -141,7 +141,7 @@ Item {
     readonly property real wallpaperH: 172 * s
     readonly property real powerW: 330 * s
     readonly property real powerH: 150 * s
-    readonly property real mediaW: 390 * s
+    readonly property real mediaW: (Players.pickable.length > 1 ? 460 : 390) * s
     readonly property real mediaH: 150 * s
     readonly property real batteryW: 316 * s
     readonly property real settingsW: 392 * s

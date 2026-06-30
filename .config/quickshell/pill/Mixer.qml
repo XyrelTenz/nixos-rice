@@ -332,6 +332,13 @@ PillSurface {
                 tipDesc: "Block sleep & screen-off"
                 onToggled: Flags.keepAwake = !Flags.keepAwake
             }
+            IconChip {
+                glyph: "sun"
+                on: Flags.nightLightMode !== "off"
+                tipTitle: "Night light"
+                tipDesc: "Warm the screen"
+                onToggled: NightLight.setMode(Flags.nightLightMode === "off" ? "on" : "off")
+            }
         }
     }
 

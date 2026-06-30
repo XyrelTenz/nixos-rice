@@ -125,9 +125,25 @@ SettingsSurface {
             shadowRenderPower: root.shadowRenderPower,
             activeOpacity: root.activeOpacity,
             inactiveOpacity: root.inactiveOpacity,
-            pillOpacity: Flags.pillOpacity
+            pillOpacity: Flags.pillOpacity,
+            nlTemp: Flags.nightLightTemp,
+            nlOnMin: Flags.nightLightOnMin,
+            nlOffMin: Flags.nightLightOffMin
         };
     }
+
+    /** Minutes-since-midnight rendered as HH:MM for the schedule scrubs. */
+    function fmtClock(v) {
+        var h = Math.floor(v / 60);
+        var m = v % 60;
+        return h + ":" + (m < 10 ? "0" + m : m);
+    }
+
+    readonly property var nightModeOptions: [
+        { label: "Off", value: "off" },
+        { label: "On", value: "on" },
+        { label: "Scheduled", value: "scheduled" }
+    ]
 
     /**
      * Rewrites one top-level decoration.lua field to `literal` (already formatted
@@ -482,6 +498,62 @@ SettingsSurface {
                         root.layout = v;
                         root.writeDeco("layout", "\"" + v + "\"");
                     }
+                }
+            }
+
+            }
+
+            Group { title: "Night light"
+
+            FieldRow {
+                label: "Mode"
+                caption: "Off, always warm, or auto by time"
+                SettingsSeg {
+                    s: root.s
+                    options: root.nightModeOptions
+                    value: Flags.nightLightMode
+                    onPicked: v => NightLight.setMode(v)
+                }
+            }
+
+            FieldRow {
+                label: "Temperature"
+                caption: "Lower is warmer"
+                collapsed: Flags.nightLightMode === "off"
+                ScrubValue {
+                    s: root.s
+                    value: Flags.nightLightTemp
+                    openValue: root.base.nlTemp
+                    from: 2200; to: 6000; step: 100; unit: "K"
+                    onEdited: v => NightLight.setTemp(v)
+                }
+            }
+
+            FieldRow {
+                label: "On at"
+                caption: "Warm tint starts"
+                collapsed: Flags.nightLightMode !== "scheduled"
+                ScrubValue {
+                    s: root.s
+                    value: Flags.nightLightOnMin
+                    openValue: root.base.nlOnMin
+                    from: 0; to: 1425; step: 15
+                    fmt: root.fmtClock
+                    onEdited: v => NightLight.setOnMin(v)
+                }
+            }
+
+            FieldRow {
+                label: "Off at"
+                caption: "Back to neutral"
+                collapsed: Flags.nightLightMode !== "scheduled"
+                ScrubValue {
+                    s: root.s
+                    value: Flags.nightLightOffMin
+                    openValue: root.base.nlOffMin
+                    from: 0; to: 1425; step: 15
+                    fmt: root.fmtClock
+                    onEdited: v => NightLight.setOffMin(v)
                 }
             }
 

@@ -31,10 +31,10 @@ Item {
     readonly property var player: Players.active
     readonly property bool playing: player !== null && player.isPlaying
     readonly property string trackLine: {
-        if (!player)
+        if (!Players.has)
             return "";
-        var t = player.trackTitle ? player.trackTitle : "";
-        var a = Theme.joinArtists(player.trackArtists, player.trackArtist);
+        var t = Players.title;
+        var a = Players.artist;
         return a.length > 0 ? t + " — " + a : t;
     }
 
@@ -75,11 +75,8 @@ Item {
         if (which === "track") {
             shownTrackLine = trackLine;
             shownPlaying = playing;
-            /** Clear then re-set so a reused art path still re-decodes (cache off). */
-            var url = player && player.trackArtUrl ? player.trackArtUrl : "";
-            shownArtUrl = "";
-            if (url)
-                Qt.callLater(function() { root.shownArtUrl = url; });
+            var u = Players.artUrl;
+            shownArtUrl = u ? (u.indexOf("file:") === 0 ? u + "#" + Players.trackKey : u) : "";
         }
         kind = which;
         flashing = true;
@@ -243,7 +240,8 @@ Item {
                 source: root.shownArtUrl
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: false
+                retainWhileLoading: true
+                cache: String(source).indexOf("file:") !== 0
                 visible: status === Image.Ready && root.shownArtUrl !== ""
             }
             GlyphIcon {

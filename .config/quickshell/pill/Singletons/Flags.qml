@@ -40,6 +40,10 @@ Singleton {
     property alias idleSuspendMin: adapter.idleSuspendMin
     property alias weatherCity: adapter.weatherCity
     property alias musicViz: adapter.musicViz
+    property alias nightLightMode: adapter.nightLightMode
+    property alias nightLightTemp: adapter.nightLightTemp
+    property alias nightLightOnMin: adapter.nightLightOnMin
+    property alias nightLightOffMin: adapter.nightLightOffMin
 
     FileView {
         id: file
@@ -84,6 +88,10 @@ Singleton {
             property int idleSuspendMin: 0
             property string weatherCity: ""
             property bool musicViz: true
+            property string nightLightMode: "off"
+            property int nightLightTemp: 4000
+            property int nightLightOnMin: 1260
+            property int nightLightOffMin: 450
         }
     }
 }

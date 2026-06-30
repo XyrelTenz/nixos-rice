@@ -15,3 +15,4 @@ singleton Workspacerules Workspacerules.qml
 singleton Cava Cava.qml
 singleton Spaces Spaces.qml
 singleton Players Players.qml
+singleton NightLight NightLight.qml

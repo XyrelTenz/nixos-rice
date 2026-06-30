@@ -26,6 +26,9 @@ Item {
     property real s: 1
     signal edited(real value)
 
+    /** Optional value-to-text mapper. When set it owns the label, so the raw number and unit step aside (used for the HH:MM schedule scrubs). */
+    property var fmt: null
+
     /**
      * Value the host captured when the tab opened. While the live value differs
      * from it the undo glyph surfaces, so a stray scrub is always one click away
@@ -171,7 +174,7 @@ Item {
                 Text {
                     id: numText
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.value.toFixed(root.decimals)
+                    text: root.fmt ? root.fmt(root.value) : root.value.toFixed(root.decimals)
                     color: Theme.cream
                     font.family: Theme.font
                     font.pixelSize: 13 * root.s
@@ -179,7 +182,7 @@ Item {
                 }
                 Text {
                     anchors.verticalCenter: numText.verticalCenter
-                    visible: root.unit.length > 0
+                    visible: !root.fmt && root.unit.length > 0
                     text: root.unit
                     color: Theme.faint
                     font.family: Theme.font

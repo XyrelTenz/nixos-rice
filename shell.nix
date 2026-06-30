@@ -25,6 +25,7 @@ localPkgs.mkShell {
   buildInputs = [
     localPkgs.flutter
     localPkgs.dart
+    localPkgs.openssl
 
     androidComposition.androidsdk
     localPkgs.mesa-demos

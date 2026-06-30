@@ -47,6 +47,7 @@ in {
     docker-compose
     prisma-engines
     prisma
+    openssl
 
 
     clang-tools

@@ -11,6 +11,7 @@ local options = {
 		toml = { "tombi" },
 		cpp = { "clang-format" },
 		prisma = { "prisma-fmt" },
+		kotlin = { "ktfmt" },
 	},
 
 	format_on_save = {

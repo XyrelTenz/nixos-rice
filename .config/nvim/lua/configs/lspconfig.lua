@@ -76,6 +76,10 @@ vim.lsp.config("rust_analyzer", {
 	},
 })
 
+vim.lsp.config("kotlin_language_server", {
+	cmd = { "kotlin-lsp", "--stdio" },
+})
+
 vim.lsp.enable({
 	"html",
 	"cssls",
@@ -88,6 +92,7 @@ vim.lsp.enable({
 	"rust_analyzer",
 	"clangd",
 	"prismals",
+	"kotlin_language_server",
 })
 
 require("telescope").load_extension("projects")

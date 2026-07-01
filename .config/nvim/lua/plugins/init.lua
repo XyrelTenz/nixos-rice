@@ -43,7 +43,7 @@ return {
 			end,
 			view = {
 				adaptive_size = true,
-				side = "right",
+				side = "left",
 			},
 		},
 	},

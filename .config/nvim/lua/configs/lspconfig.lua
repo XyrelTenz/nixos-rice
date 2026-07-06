@@ -42,10 +42,12 @@ vim.lsp.config("rust_analyzer", {
 
 		local cargo_registry = vim.fn.expand("~/.cargo/registry")
 		local rustup_home = vim.fn.expand("~/.rustup")
-		if vim.startswith(filepath, cargo_registry)
+		if
+			vim.startswith(filepath, cargo_registry)
 			or vim.startswith(filepath, rustup_home)
 			or vim.startswith(filepath, "/rustc")
-			or vim.startswith(filepath, "/nix/store") then
+			or vim.startswith(filepath, "/nix/store")
+		then
 			local clients = vim.lsp.get_clients({ name = "rust_analyzer" })
 			if #clients > 0 then
 				on_dir(clients[1].config.root_dir)
@@ -76,8 +78,36 @@ vim.lsp.config("rust_analyzer", {
 	},
 })
 
-vim.lsp.config("kotlin_language_server", {
-	cmd = { "kotlin-lsp", "--stdio" },
+-- Resolve the real JDK home at startup (follows NixOS symlinks to the actual store path).
+-- /run/current-system/sw is NOT a valid JAVA_HOME — it's a merged profile without JDK internals.
+local java_bin = vim.fn.system("readlink -f $(which java) 2>/dev/null"):gsub("\n", "")
+local java_home = java_bin ~= "" and vim.fn.fnamemodify(java_bin, ":h:h") or ""
+
+vim.lsp.config("kotlin_lsp", {
+	cmd = java_home ~= ""
+			and { "env", "JAVA_HOME=" .. java_home, "kotlin-lsp", "--stdio" }
+		or { "kotlin-lsp", "--stdio" },
+	filetypes = { "kotlin", "java" },
+	root_dir = function(bufnr, on_dir)
+		local root = vim.fs.root(bufnr, {
+			"settings.gradle",
+			"settings.gradle.kts",
+			"build.gradle",
+			"build.gradle.kts",
+			"pom.xml",
+			".git",
+		})
+		if root then
+			on_dir(root)
+		end
+	end,
+	settings = {
+		intellij = {
+			buildTool = "gradle",
+			-- Pass the resolved JDK path so kotlin-lsp can find it for Gradle execution
+			jdk = java_home,
+		},
+	},
 })
 
 vim.lsp.enable({
@@ -92,7 +122,7 @@ vim.lsp.enable({
 	"rust_analyzer",
 	"clangd",
 	"prismals",
-	"kotlin_language_server",
+	"kotlin_lsp",
 })
 
 require("telescope").load_extension("projects")
@@ -106,7 +136,12 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		end
 
 		local opts = { buffer = bufnr }
-		vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+		vim.keymap.set("n", "gd", function()
+			local ok, err = pcall(vim.lsp.buf.definition)
+			if not ok then
+				vim.notify("LSP not ready yet: " .. tostring(err), vim.log.levels.WARN)
+			end
+		end, opts)
 
 		vim.bo[bufnr].tagfunc = "v:lua.vim.lsp.tagfunc"
 	end,

@@ -16,6 +16,7 @@ in
     ANDROID_HOME = "/home/${username}/Android/Sdk";
     ANDROID_SDK_ROOT = "/home/${username}/Android/Sdk";
     ANDROID_AVD_HOME = "/home/${username}/.config/.android/avd";
+    _JAVA_OPTIONS = "-Dorg.gradle.projectcachedir=$HOME/.gradle/project-cache";
   };
 
   home.sessionPath = [

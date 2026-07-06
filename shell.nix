@@ -50,6 +50,9 @@ localPkgs.mkShell {
     # Expose graphic drivers and openssl for Wayland/XCB rendering verification
     export LD_LIBRARY_PATH="${localPkgs.openssl.out}/lib:/run/opengl-driver/lib:/run/opengl-driver-32/lib:$LD_LIBRARY_PATH"
 
+    # Force Gradle to use a writable directory for its project cache instead of the read-only /nix/store
+    export _JAVA_OPTIONS="-Dorg.gradle.projectcachedir=$HOME/.gradle/project-cache"
+
     echo "⚡ Flutter & Android SDK development environment loaded! ⚡"
   '';
 }

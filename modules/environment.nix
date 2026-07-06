@@ -3,11 +3,26 @@
 {
   time.timeZone = timezone;
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    
+    substituters = [
+      "https://cache.nixos.org"
+      "https://attic.xuyh0120.win/lantian"
+    ];
+    trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
+    ];
+  };
 
   nixpkgs.config = {
     allowUnfree = true;
     android_sdk.accept_license = true;
+    
+    permittedInsecurePackages = [
+      "pnpm-10.34.0"
+    ];
   };
 
   environment.sessionVariables = {
@@ -24,7 +39,6 @@
 
   programs.fish.enable = true;
   programs.zoxide.enable = true;
-
 
   programs.direnv = {
     enable = true;
@@ -68,7 +82,6 @@
     libXrandr
     libXrender
     libXtst
-    libxcb
     libxshmfence
     
     libpulseaudio

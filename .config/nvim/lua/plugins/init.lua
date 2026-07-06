@@ -25,7 +25,7 @@ return {
 			},
 			prefer_startup_root = true,
 			filters = {
-				custom = { "node_modules", "target", "build", "dist", "out" },
+				custom = { "^node_modules$", "^target$", "^build$", "^dist$", "^out$" },
 				dotfiles = false,
 			},
 			git = {
@@ -122,6 +122,7 @@ return {
 				"svelte",
 				"vue",
 				"qml",
+				"kotlin",
 			},
 		},
 	},

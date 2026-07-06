@@ -40,6 +40,7 @@ ShellRoot {
     Component.onCompleted: {
         refresh();
         Devices.restore();
+        void GameMode.active;
     }
 
     /**
@@ -124,7 +125,14 @@ ShellRoot {
         }
     }
 
+    /**
+     * An empty monitor argument resolves to the focused monitor here, so the
+     * keybind scripts skip their hyprctl+jq round trip and a surface open costs
+     * one IPC call instead of three process spawns.
+     */
     function toggleSurface(mon, surface) {
+        if (!mon || mon.length === 0)
+            mon = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : "";
         if (root.openMon === mon && root.openSurface === surface) {
             root.close();
             return;
@@ -176,6 +184,7 @@ ShellRoot {
                 ScreenRec.quickChoosing = true;
             }
         }
+        function gameMode(mon: string): void { Flags.gameMode = !Flags.gameMode; }
         function sysmon(mon: string): void { root.toggleSurface(mon, "sysmon"); }
         function system(mon: string): void { root.toggleSurface(mon, "sysmon"); }
         function clipboard(mon: string): void { root.toggleSurface(mon, "clipboard"); }
@@ -186,6 +195,9 @@ ShellRoot {
         }
         function peek(mon: string): void { root.peek(mon); }
         function hide(): void { root.close(); }
+
+        /** Opens any surface by name, settings sub-pages included; dev and scripting door. */
+        function page(mon: string, name: string): void { root.toggleSurface(mon, name); }
 
         /**
          * The two halves of the SUPER+M minimize toggle, driven by the
@@ -216,14 +228,16 @@ ShellRoot {
             readonly property real topGap: 8 * s
             readonly property real restHeight: 38 * s
 
+            readonly property real gameBarH: 34 * s
+
             screen: modelData
             color: "transparent"
             exclusionMode: ExclusionMode.Normal
-            exclusiveZone: restHeight + topGap
+            exclusiveZone: Flags.gameMode ? gameBarH : (restHeight + topGap)
             aboveWindows: true
 
             anchors { top: true; left: true; right: true }
-            implicitHeight: restHeight + topGap
+            implicitHeight: Flags.gameMode ? gameBarH : (restHeight + topGap)
 
             mask: emptyReserve
             Region { id: emptyReserve }
@@ -396,8 +410,16 @@ ShellRoot {
                 Pill {
                     id: pill
                     anchors.top: parent.top
-                    anchors.topMargin: overlay.topGap
+                    anchors.topMargin: pill.mode === "game" ? 0 : overlay.topGap
                     anchors.horizontalCenter: parent.horizontalCenter
+
+                    Behavior on anchors.topMargin {
+                        NumberAnimation {
+                            duration: Motion.morph
+                            easing.type: Motion.easeMorph
+                            easing.bezierCurve: Motion.morphCurve
+                        }
+                    }
                     s: overlay.s
                     screenName: overlay.modelData.name
                     barWindow: overlay

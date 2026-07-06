@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 import Quickshell
+import Quickshell.Io
 import Quickshell.Networking
 import Quickshell.Hyprland
 import "Singletons"
@@ -56,6 +57,7 @@ Item {
     readonly property bool animationOpen: surface === "animation"
     readonly property bool fontpickerOpen: surface === "fontpicker"
     readonly property bool settingsLike: settingsOpen || appearanceOpen || updatesOpen
+        || lookOpen || inputOpen || displayOpen || animationOpen || idlelockOpen || fontpickerOpen
     readonly property bool hasMedia: Players.list.length > 0
 
     /**
@@ -81,7 +83,7 @@ Item {
      * so the polkit window underneath is clickable and typeable, instead of the
      * backdrop swallowing the reach for it and dismissing the whole pill.
      */
-    readonly property bool authPending: updatesOpen && updates.applying
+    readonly property bool authPending: updatesOpen && ldUpdates.item !== null && ldUpdates.item.applying
 
     /**
      * The special workspace shown on this pill's monitor, surfaced as a plain word
@@ -129,10 +131,7 @@ Item {
     readonly property real hoverPad: 20 * s
     readonly property real hoverW: hoverRow.implicitWidth + 2 * hoverPad
     readonly property real hoverH: 58 * s
-    readonly property real mixerW: 93 * Math.max(4, mixer.faderCount) * s
     readonly property real mixerH: 214 * s
-    readonly property real calendarW: (calendar.implicitWidth > 0 ? calendar.implicitWidth : 282 * s) + 36 * s
-    readonly property real calendarH: calendar.implicitHeight + 32 * s
     readonly property real launcherW: 360 * s
     readonly property real launcherH: 332 * s
     readonly property real clipboardW: 360 * s
@@ -164,51 +163,80 @@ Item {
     readonly property real quickChooseH: 76 * s
     readonly property real quickCountW: 150 * s
     readonly property real quickCountH: 64 * s
+    readonly property real dragOverW: 300 * s
+    readonly property real dragOverH: 126 * s
+    readonly property real gameH: 34 * s
+    readonly property real gameW: barWindow ? barWindow.width : 1920
     readonly property real restCorner: 18 * s
     readonly property real openCorner: 22 * s
 
     /**
+     * Latch-once lazy load. Every surface sleeps in an inactive Loader until its
+     * first open; the size and ame thunks below resolve items through here. The
+     * ordering is the trick: flip `active` before any read of the loader, so the
+     * calling binding never has the loader registered as a dep when the flip
+     * fires mid-evaluation (that read-then-write would be a binding loop). The
+     * write is idempotent and the Loader loads synchronously, so a first open
+     * reads the real implicitHeight in the same evaluation and the morph target
+     * is exact. Nothing ever deactivates a loaded surface.
+     */
+    function surfaceItem(ld) {
+        ld.active = true;
+        return ld.item;
+    }
+
+    /**
      * Single source of truth for every morphing surface, keyed by its `surface`
      * string. Each entry owns the surface's target size (a thunk so the geometry
-     * it reads registers as a live dep of targetSize) and the surface item Ame
-     * anchors to while it is open (null = Ame falls back to the pill's own hover
-     * or wake anchor). `mode`, `targetSize` and `ameSurface` all derive from this,
-     * so adding a surface is one entry here plus its child item — no parallel
-     * ternary chains to keep in lockstep.
+     * it reads registers as a live dep of targetSize) and a thunk resolving the
+     * surface item Ame anchors to while it is open (null = Ame falls back to the
+     * pill's own hover or wake anchor). `mode`, `targetSize` and `ameSurface` all
+     * derive from this, so adding a surface is one entry here plus its Loader —
+     * no parallel ternary chains to keep in lockstep.
      */
     readonly property var surfaces: ({
-        calendar:  { size: () => Qt.size(calendarW, calendarH), ame: calendar },
-        launcher:  { size: () => Qt.size(launcherW, launcherH), ame: launcher },
-        clipboard: { size: () => Qt.size(clipboardW, clipboardH), ame: clip },
-        wallpaper: { size: () => Qt.size(wallpaperW, wallpaperH), ame: null },
-        power:     { size: () => Qt.size(powerW, powerH), ame: power },
-        media:     { size: () => Qt.size(mediaW, mediaH), ame: media },
-        mixer:     { size: () => Qt.size(mixerW, mixerH), ame: mixer },
-        link:      { size: () => Qt.size(link.desiredW, link.implicitHeight + 26 * s), ame: link },
-        battery:   { size: () => Qt.size(batteryW, battery.implicitHeight + 26 * s), ame: battery },
-        settings:  { size: () => Qt.size(settingsW, settings.implicitHeight + 29 * s), ame: settings },
-        keybinds:  { size: () => Qt.size(keybindsW, keybinds.implicitHeight + 29 * s), ame: keybinds },
-        workspaces: { size: () => Qt.size(workspacesW, workspaces.implicitHeight + 29 * s), ame: workspaces },
-        stash:     { size: () => Qt.size(stashW, stash.implicitHeight + 29 * s), ame: stash },
-        spaceapps: { size: () => Qt.size(spaceappsW, spaceapps.implicitHeight + 29 * s), ame: spaceapps },
-        recorder:  { size: () => Qt.size(recorderW, recorder.implicitHeight + 33 * s), ame: recorder },
-        sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon },
-        appearance: { size: () => Qt.size(appearanceW, appearance.implicitHeight + 29 * s), ame: appearance },
-        updates:    { size: () => Qt.size(updatesW, updates.implicitHeight + 29 * s), ame: updates },
-        display:    { size: () => Qt.size(displayW, display.implicitHeight + 29 * s), ame: display },
-        input:      { size: () => Qt.size(inputW, input.implicitHeight + 29 * s), ame: input },
-        look:       { size: () => Qt.size(lookW, look.implicitHeight + 29 * s), ame: look },
-        idlelock:   { size: () => Qt.size(idlelockW, idlelock.implicitHeight + 29 * s), ame: idlelock },
-        animation:  { size: () => Qt.size(animationW, animation.implicitHeight + 29 * s), ame: animation },
-        fontpicker: { size: () => Qt.size(fontpickerW, fontpicker.implicitHeight + 29 * s), ame: fontpicker }
+        calendar:  { size: () => { const it = surfaceItem(ldCalendar); return Qt.size((it.implicitWidth > 0 ? it.implicitWidth : 282 * s) + 36 * s, it.implicitHeight + 32 * s); }, ame: () => surfaceItem(ldCalendar) },
+        launcher:  { size: () => { surfaceItem(ldLauncher); return Qt.size(launcherW, launcherH); }, ame: () => surfaceItem(ldLauncher) },
+        clipboard: { size: () => { surfaceItem(ldClip); return Qt.size(clipboardW, clipboardH); }, ame: () => surfaceItem(ldClip) },
+        wallpaper: { size: () => { surfaceItem(ldWall); return Qt.size(wallpaperW, wallpaperH); }, ame: () => null },
+        power:     { size: () => { surfaceItem(ldPower); return Qt.size(powerW, powerH); }, ame: () => surfaceItem(ldPower) },
+        media:     { size: () => { surfaceItem(ldMedia); return Qt.size(mediaW, mediaH); }, ame: () => surfaceItem(ldMedia) },
+        mixer:     { size: () => Qt.size(93 * Math.max(4, surfaceItem(ldMixer).faderCount) * s, mixerH), ame: () => surfaceItem(ldMixer) },
+        link:      { size: () => { const it = surfaceItem(ldLink); return Qt.size(it.desiredW, it.implicitHeight + 26 * s); }, ame: () => surfaceItem(ldLink) },
+        battery:   { size: () => Qt.size(batteryW, surfaceItem(ldBattery).implicitHeight + 26 * s), ame: () => surfaceItem(ldBattery) },
+        settings:  { size: () => Qt.size(settingsW, surfaceItem(ldSettings).implicitHeight + 29 * s), ame: () => surfaceItem(ldSettings) },
+        keybinds:  { size: () => Qt.size(keybindsW, surfaceItem(ldKeybinds).implicitHeight + 29 * s), ame: () => surfaceItem(ldKeybinds) },
+        workspaces: { size: () => Qt.size(workspacesW, surfaceItem(ldWorkspaces).implicitHeight + 29 * s), ame: () => surfaceItem(ldWorkspaces) },
+        stash:     { size: () => Qt.size(stashW, surfaceItem(ldStash).implicitHeight + 29 * s), ame: () => surfaceItem(ldStash) },
+        spaceapps: { size: () => Qt.size(spaceappsW, surfaceItem(ldSpaceapps).implicitHeight + 29 * s), ame: () => surfaceItem(ldSpaceapps) },
+        recorder:  { size: () => Qt.size(recorderW, surfaceItem(ldRecorder).implicitHeight + 33 * s), ame: () => surfaceItem(ldRecorder) },
+        sysmon:    { size: () => Qt.size(sysmonW, surfaceItem(ldSysmon).implicitHeight + 33 * s), ame: () => surfaceItem(ldSysmon) },
+        appearance: { size: () => Qt.size(appearanceW, surfaceItem(ldAppearance).implicitHeight + 29 * s), ame: () => surfaceItem(ldAppearance) },
+        updates:    { size: () => Qt.size(updatesW, surfaceItem(ldUpdates).implicitHeight + 29 * s), ame: () => surfaceItem(ldUpdates) },
+        display:    { size: () => Qt.size(displayW, surfaceItem(ldDisplay).implicitHeight + 29 * s), ame: () => surfaceItem(ldDisplay) },
+        input:      { size: () => Qt.size(inputW, surfaceItem(ldInput).implicitHeight + 29 * s), ame: () => surfaceItem(ldInput) },
+        look:       { size: () => Qt.size(lookW, surfaceItem(ldLook).implicitHeight + 29 * s), ame: () => surfaceItem(ldLook) },
+        idlelock:   { size: () => Qt.size(idlelockW, surfaceItem(ldIdlelock).implicitHeight + 29 * s), ame: () => surfaceItem(ldIdlelock) },
+        animation:  { size: () => Qt.size(animationW, surfaceItem(ldAnimation).implicitHeight + 29 * s), ame: () => surfaceItem(ldAnimation) },
+        fontpicker: { size: () => Qt.size(fontpickerW, surfaceItem(ldFontpicker).implicitHeight + 29 * s), ame: () => surfaceItem(ldFontpicker) }
     })
 
-    readonly property string mode: surfaceOpen && surfaces[surface] !== undefined ? surface
+    readonly property string mode: dragActive ? "dragOver"
+        : (surfaceOpen && surfaces[surface] !== undefined ? surface
+        : (Flags.gameMode ? "game"
         : (quickChoosing ? "quickChoose"
         : (quickCounting ? "quickCount"
         : (osdActive && !held ? "osd"
         : (toastActive && !held ? "toast"
-        : (expanded ? "hover" : "rest")))))
+        : (expanded ? "hover" : "rest")))))))
+
+    /**
+     * AppImage drag-install state, live only while a file hovers the resting pill.
+     * `dragStage` walks hover -> installing -> done, or bad for a non-AppImage drop.
+     */
+    property bool dragActive: false
+    property string dragName: ""
+    property string dragStage: ""
 
     signal requestSurface(string name)
     signal requestClose()
@@ -218,7 +246,7 @@ Item {
      * when the mixer is open and a fader consumed the step.
      */
     function mixerStep(deltaPct) {
-        return pill.mixerOpen ? mixer.stepFocused(deltaPct) : false;
+        return (pill.mixerOpen && ldMixer.item) ? ldMixer.item.stepFocused(deltaPct) : false;
     }
 
     /**
@@ -226,8 +254,8 @@ Item {
      * (right) or -1 (left). No-op unless the mixer is open.
      */
     function mixerFocusMove(dir) {
-        if (pill.mixerOpen)
-            mixer.moveFocus(dir);
+        if (pill.mixerOpen && ldMixer.item)
+            ldMixer.item.moveFocus(dir);
     }
 
     /**
@@ -235,7 +263,7 @@ Item {
      * Returns true when the recorder is open and a revealed fader consumed it.
      */
     function recorderStep(deltaPct) {
-        return pill.recorderOpen ? recorder.stepFocused(deltaPct) : false;
+        return (pill.recorderOpen && ldRecorder.item) ? ldRecorder.item.stepFocused(deltaPct) : false;
     }
 
     /**
@@ -245,9 +273,21 @@ Item {
      */
     function rowNavSurface() {
         if (pill.settingsOpen)
-            return settings;
+            return ldSettings.item;
         if (pill.appearanceOpen)
-            return appearance;
+            return ldAppearance.item;
+        if (pill.lookOpen)
+            return ldLook.item;
+        if (pill.inputOpen)
+            return ldInput.item;
+        if (pill.displayOpen)
+            return ldDisplay.item;
+        if (pill.animationOpen)
+            return ldAnimation.item;
+        if (pill.idlelockOpen)
+            return ldIdlelock.item;
+        if (pill.fontpickerOpen)
+            return ldFontpicker.item;
         return null;
     }
 
@@ -292,8 +332,8 @@ Item {
      * carrying the soul seam. No-op unless the keybinds surface is open.
      */
     function keybindsMove(dir) {
-        if (pill.keybindsOpen)
-            keybinds.move(dir);
+        if (pill.keybindsOpen && ldKeybinds.item)
+            ldKeybinds.item.move(dir);
     }
 
     /**
@@ -301,11 +341,11 @@ Item {
      * No-op unless the keybinds surface is open.
      */
     function keybindsActivate() {
-        if (pill.keybindsOpen)
-            keybinds.activate();
+        if (pill.keybindsOpen && ldKeybinds.item)
+            ldKeybinds.item.activate();
     }
 
-    readonly property bool keybindsListening: pill.keybindsOpen && keybinds.listening
+    readonly property bool keybindsListening: pill.keybindsOpen && ldKeybinds.item !== null && ldKeybinds.item.listening
 
     /**
      * A tile was picked in the standalone quick-record chooser. Screen with several
@@ -338,7 +378,7 @@ Item {
      * Escape should close the surface instead.
      */
     function linkBack() {
-        return pill.linkOpen ? link.back() : false;
+        return (pill.linkOpen && ldLink.item) ? ldLink.item.back() : false;
     }
 
     /**
@@ -349,8 +389,8 @@ Item {
      */
     function surfaceBack() {
         if (pill.keybindsOpen) {
-            if (keybinds.formOpen)
-                keybinds.closeForm();
+            if (ldKeybinds.item && ldKeybinds.item.formOpen)
+                ldKeybinds.item.closeForm();
             else
                 pill.requestSurface("settings");
             return;
@@ -360,21 +400,21 @@ Item {
             return;
         }
         if (pill.stashOpen) {
-            if (stash.addOpen)
-                stash.closeAdd();
+            if (ldStash.item && ldStash.item.addOpen)
+                ldStash.item.closeAdd();
             else
                 pill.requestSurface("workspaces");
             return;
         }
         if (pill.spaceappsOpen) {
-            if (spaceapps.addOpen)
-                spaceapps.closeAdd();
+            if (ldSpaceapps.item && ldSpaceapps.item.addOpen)
+                ldSpaceapps.item.closeAdd();
             else
                 pill.requestSurface("workspaces");
             return;
         }
-        if (pill.workspacesOpen && workspaces.formOpen) {
-            workspaces.closeForm();
+        if (pill.workspacesOpen && ldWorkspaces.item && ldWorkspaces.item.formOpen) {
+            ldWorkspaces.item.closeForm();
             return;
         }
         if (pill.appearanceOpen || pill.updatesOpen || pill.displayOpen || pill.inputOpen || pill.lookOpen || pill.idlelockOpen || pill.animationOpen || pill.workspacesOpen) {
@@ -389,8 +429,8 @@ Item {
      * form was open and dismissed, false otherwise so Escape closes the surface.
      */
     function keybindsBack() {
-        if (pill.keybindsOpen && keybinds.formOpen) {
-            keybinds.closeForm();
+        if (pill.keybindsOpen && ldKeybinds.item && ldKeybinds.item.formOpen) {
+            ldKeybinds.item.closeForm();
             return true;
         }
         return false;
@@ -401,8 +441,8 @@ Item {
      * and -1 is left (newer). No-op unless the wallpaper surface is open.
      */
     function wallpaperMove(dir) {
-        if (pill.wallpaperOpen)
-            wall.move(dir);
+        if (pill.wallpaperOpen && ldWall.item)
+            ldWall.item.move(dir);
     }
 
     /**
@@ -411,11 +451,11 @@ Item {
      * wallpaper surface is open.
      */
     function wallpaperActivate() {
-        if (pill.wallpaperOpen)
-            wall.activate();
+        if (pill.wallpaperOpen && ldWall.item)
+            ldWall.item.activate();
     }
 
-    readonly property bool wallpaperSearching: pill.wallpaperOpen && wall.searching
+    readonly property bool wallpaperSearching: pill.wallpaperOpen && ldWall.item !== null && ldWall.item.searching
 
     /**
      * Route the first printable keystroke over the open wallpaper strip into a
@@ -423,8 +463,8 @@ Item {
      * surface is open.
      */
     function wallpaperType(ch) {
-        if (pill.wallpaperOpen)
-            wall.startSearch(ch);
+        if (pill.wallpaperOpen && ldWall.item)
+            ldWall.item.startSearch(ch);
     }
 
     /**
@@ -432,8 +472,8 @@ Item {
      * and -1 is left. No-op unless the power surface is open.
      */
     function powerMove(dir) {
-        if (pill.powerOpen)
-            power.move(dir);
+        if (pill.powerOpen && ldPower.item)
+            ldPower.item.move(dir);
     }
 
     /**
@@ -442,7 +482,7 @@ Item {
      * consumed the key. No-op (false) unless the power surface is open.
      */
     function powerPress() {
-        return pill.powerOpen ? power.pressFocused() : false;
+        return (pill.powerOpen && ldPower.item) ? ldPower.item.pressFocused() : false;
     }
 
     /**
@@ -450,8 +490,8 @@ Item {
      * hold so a key let go before the fill completes never confirms.
      */
     function powerRelease() {
-        if (pill.powerOpen)
-            power.releaseFocused();
+        if (pill.powerOpen && ldPower.item)
+            ldPower.item.releaseFocused();
     }
 
     onSurfaceOpenChanged: if (surfaceOpen) {
@@ -478,7 +518,7 @@ Item {
         precision: Flags.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes
     }
 
-    property real morphRadius: (mode === "rest" || mode === "hover") ? restCorner : openCorner
+    property real morphRadius: (mode === "rest" || mode === "hover" || mode === "game") ? restCorner : openCorner
 
     /**
      * Target geometry for the non-surface morph modes. Surface sizes come from
@@ -491,7 +531,9 @@ Item {
         toast: () => Qt.size(toastW, toastLoader.item ? toastLoader.item.implicitHeight + 24 * s : restH),
         hover: () => Qt.size(hoverW, hoverH),
         quickChoose: () => Qt.size(quickChooseW, quickChooseH),
-        quickCount:  () => Qt.size(quickCountW, quickCountH)
+        quickCount:  () => Qt.size(quickCountW, quickCountH),
+        dragOver:    () => Qt.size(dragOverW, dragOverH),
+        game:        () => Qt.size(gameW, gameH)
     })
 
     readonly property size targetSize: {
@@ -527,10 +569,24 @@ Item {
     property bool hoverSoulGate: false
     readonly property bool hoverArrived: mode === "hover" && morphCloseness > 0.55
     onHoverArrivedChanged: if (hoverArrived) hoverSoulGate = true
-    onModeChanged: if (mode !== "hover") {
-        hoverSoulGate = false;
-        soulTarget = "";
-        soulWsIndex = -1;
+
+    /**
+     * Rest and hover sit a few dozen pixels apart, so the 420ms morph is nearly
+     * all settle tail on that hop and reads sluggish. Both endpoints in the
+     * rest/hover pair get the shorter glide; every real surface morph keeps the
+     * full duration.
+     */
+    property string lastMode: "rest"
+    property bool hoverHop: false
+
+    onModeChanged: {
+        hoverHop = (mode === "hover" || mode === "rest") && (lastMode === "hover" || lastMode === "rest");
+        lastMode = mode;
+        if (mode !== "hover") {
+            hoverSoulGate = false;
+            soulTarget = "";
+            soulWsIndex = -1;
+        }
     }
     onHoverSoulGateChanged: if (hoverSoulGate) kanjiFlashAnim.restart()
 
@@ -545,9 +601,9 @@ Item {
         NumberAnimation { target: pill; property: "kanjiFlash"; to: 0; duration: 320; easing.type: Easing.OutCubic }
     }
 
-    Behavior on width { NumberAnimation { duration: Motion.morph; easing.type: Motion.easeMorph; easing.bezierCurve: Motion.morphCurve } }
-    Behavior on height { NumberAnimation { duration: Motion.morph; easing.type: Motion.easeMorph; easing.bezierCurve: Motion.morphCurve } }
-    Behavior on morphRadius { NumberAnimation { duration: Motion.morph; easing.type: Motion.easeMorph; easing.bezierCurve: Motion.morphCurve } }
+    Behavior on width { NumberAnimation { duration: pill.hoverHop ? Motion.glide : Motion.morph; easing.type: Motion.easeMorph; easing.bezierCurve: Motion.morphCurve } }
+    Behavior on height { NumberAnimation { duration: pill.hoverHop ? Motion.glide : Motion.morph; easing.type: Motion.easeMorph; easing.bezierCurve: Motion.morphCurve } }
+    Behavior on morphRadius { NumberAnimation { duration: pill.hoverHop ? Motion.glide : Motion.morph; easing.type: Motion.easeMorph; easing.bezierCurve: Motion.morphCurve } }
 
     Rectangle {
         id: bud
@@ -610,7 +666,19 @@ Item {
     Rectangle {
         id: body
         anchors.fill: parent
+
+        /**
+         * Corner flatness rides the morph curve so docking into the game bar
+         * squares the corners as one continuous shape change instead of a snap.
+         */
+        property real gameFlat: pill.mode === "game" ? 1 : 0
+        Behavior on gameFlat { NumberAnimation { duration: Motion.morph; easing.type: Motion.easeMorph; easing.bezierCurve: Motion.morphCurve } }
+
         radius: pill.morphRadius
+        topLeftRadius: pill.morphRadius * (1 - gameFlat)
+        topRightRadius: pill.morphRadius * (1 - gameFlat)
+        bottomLeftRadius: pill.morphRadius * (1 - gameFlat)
+        bottomRightRadius: pill.morphRadius * (1 - gameFlat)
         border.width: 1
         border.color: Theme.border
         gradient: Gradient {
@@ -691,13 +759,13 @@ Item {
      * e.g. wallpaper), so Ame falls back to the pill's own hover/wake anchor.
      */
     readonly property var ameSurface: (surfaceOpen && surfaces[surface] !== undefined)
-        ? surfaces[surface].ame : null
+        ? surfaces[surface].ame() : null
 
     Ame {
         id: ame
         anchors.fill: parent
         s: pill.s
-        heat: pill.powerOpen ? power.holdProgress : 0
+        heat: (pill.powerOpen && ldPower.item) ? ldPower.item.holdProgress : 0
         wake: pill.wakePoint
         wickDir: pill.powerOpen ? 1 : -1
         form: pill.ameSurface ? pill.ameSurface.ameForm
@@ -745,12 +813,359 @@ Item {
         onTapped: pill.pinned = !pill.pinned
     }
 
+    property var installQueue: []
+
+    function localPath(url) {
+        var s = String(url);
+        if (s.indexOf("file://") === 0)
+            s = s.substring(7);
+        return decodeURIComponent(s);
+    }
+
+    function appimagePaths(urls) {
+        var out = [];
+        for (var i = 0; i < urls.length; i++)
+            if (/\.appimage$/i.test(String(urls[i])))
+                out.push(pill.localPath(urls[i]));
+        return out;
+    }
+
+    function dropLabel(urls) {
+        var p = pill.localPath(urls.length ? urls[0] : "");
+        return p.substring(p.lastIndexOf("/") + 1).replace(/\.appimage$/i, "");
+    }
+
+    property bool installedAny: false
+    property string installAction: "new"
+
+    function runNextInstall() {
+        if (pill.installQueue.length === 0) {
+            pill.dragStage = pill.installedAny ? "done" : "fail";
+            (pill.installedAny ? dropDoneTimer : dropBadTimer).restart();
+            return;
+        }
+        var next = pill.installQueue.shift();
+        pill.dragName = next.substring(next.lastIndexOf("/") + 1).replace(/\.appimage$/i, "");
+        installProc.command = ["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/appimage-install.sh", "install", next];
+        installProc.running = true;
+    }
+
+    Process {
+        id: installProc
+        stdout: StdioCollector { id: installOut }
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                pill.installedAny = true;
+                var line = installOut.text.trim().split("\n").pop();
+                var parts = line.split("\t");
+                if (parts.length >= 3)
+                    pill.installAction = parts[2];
+            }
+            pill.runNextInstall();
+        }
+    }
+
+    Timer {
+        id: dropDoneTimer
+        interval: 1100
+        onTriggered: {
+            pill.dragActive = false;
+            pill.dragStage = "";
+            pill.requestSurface("launcher");
+        }
+    }
+
+    Timer {
+        id: dropBadTimer
+        interval: 1300
+        onTriggered: {
+            pill.dragActive = false;
+            pill.dragStage = "";
+        }
+    }
+
+    /**
+     * File drops land only on the resting pill; an open surface turns the pill
+     * into a fullscreen modal that swallows the drag before it can start. An
+     * AppImage kicks off the install, anything else flashes a rejection.
+     */
+    DropArea {
+        anchors.fill: parent
+        enabled: !pill.surfaceOpen && pill.dragStage !== "installing" && pill.dragStage !== "done"
+        keys: ["text/uri-list"]
+        onEntered: (drag) => {
+            drag.acceptProposedAction();
+            pill.dragActive = true;
+            pill.dragStage = pill.appimagePaths(drag.urls).length > 0 ? "hover" : "bad";
+            pill.dragName = pill.dropLabel(drag.urls);
+        }
+        onExited: {
+            if (pill.dragStage === "hover" || pill.dragStage === "bad") {
+                pill.dragActive = false;
+                pill.dragStage = "";
+            }
+        }
+        onDropped: (drop) => {
+            drop.acceptProposedAction();
+            var appimages = pill.appimagePaths(drop.urls);
+            if (appimages.length === 0) {
+                pill.dragActive = true;
+                pill.dragStage = "bad";
+                pill.dragName = pill.dropLabel(drop.urls);
+                dropBadTimer.restart();
+                return;
+            }
+            pill.dragActive = true;
+            pill.dragStage = "installing";
+            pill.installedAny = false;
+            pill.installAction = "new";
+            pill.installQueue = appimages;
+            pill.runNextInstall();
+        }
+    }
+
+    /**
+     * Drop-zone face: corner brackets frame a stage glyph and label that walk
+     * from "drop to install" through the spinner to a checkmark. Shares the morph
+     * fade of the other pill faces, so it grows in as the pill reaches its size.
+     */
+    Item {
+        id: dragOverView
+        anchors.fill: parent
+        anchors.margins: 11 * pill.s
+        enabled: pill.mode === "dragOver"
+        opacity: pill.mode === "dragOver" ? Math.pow(pill.morphCloseness, 1.2) : 0
+        visible: opacity > 0.01
+
+        Behavior on opacity { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
+
+        readonly property color accent: (pill.dragStage === "bad" || pill.dragStage === "fail") ? "#e0533f" : Theme.vermLit
+        readonly property real brLen: 15 * pill.s
+        readonly property real brThick: 2 * pill.s
+
+        Repeater {
+            model: [[0, 0], [1, 0], [0, 1], [1, 1]]
+            delegate: Item {
+                id: corner
+                required property var modelData
+                readonly property bool rightSide: modelData[0] === 1
+                readonly property bool bottomSide: modelData[1] === 1
+                x: rightSide ? dragOverView.width - dragOverView.brLen : 0
+                y: bottomSide ? dragOverView.height - dragOverView.brLen : 0
+                width: dragOverView.brLen
+                height: dragOverView.brLen
+
+                Rectangle {
+                    width: dragOverView.brLen
+                    height: dragOverView.brThick
+                    radius: dragOverView.brThick / 2
+                    color: dragOverView.accent
+                    anchors.top: corner.bottomSide ? undefined : parent.top
+                    anchors.bottom: corner.bottomSide ? parent.bottom : undefined
+                    anchors.left: corner.rightSide ? undefined : parent.left
+                    anchors.right: corner.rightSide ? parent.right : undefined
+                }
+                Rectangle {
+                    width: dragOverView.brThick
+                    height: dragOverView.brLen
+                    radius: dragOverView.brThick / 2
+                    color: dragOverView.accent
+                    anchors.top: corner.bottomSide ? undefined : parent.top
+                    anchors.bottom: corner.bottomSide ? parent.bottom : undefined
+                    anchors.left: corner.rightSide ? undefined : parent.left
+                    anchors.right: corner.rightSide ? parent.right : undefined
+                }
+            }
+        }
+
+        Column {
+            anchors.centerIn: parent
+            width: parent.width - 44 * pill.s
+            spacing: 7 * pill.s
+
+            Item {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 26 * pill.s
+                height: 26 * pill.s
+
+                GlyphIcon {
+                    id: dragGlyph
+                    anchors.fill: parent
+                    stroke: 2
+                    color: dragOverView.accent
+                    name: (pill.dragStage === "bad" || pill.dragStage === "fail") ? "close"
+                        : (pill.dragStage === "installing" ? "reboot"
+                        : (pill.dragStage === "done" ? "check" : "download"))
+
+                    RotationAnimation on rotation {
+                        running: pill.dragStage === "installing"
+                        loops: Animation.Infinite
+                        from: 0
+                        to: 360
+                        duration: 900
+                    }
+                    onNameChanged: if (pill.dragStage !== "installing") rotation = 0
+                }
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: pill.dragStage === "bad" ? "Not an AppImage"
+                    : (pill.dragStage === "fail" ? "Install failed"
+                    : (pill.dragStage === "installing" ? "Installing"
+                    : (pill.dragStage === "done" ? (pill.installAction === "updated" ? "Updated"
+                        : (pill.installAction === "reinstalled" ? "Reinstalled" : "Installed"))
+                    : "Drop to install")))
+                color: Theme.cream
+                font.family: Theme.font
+                font.pixelSize: 13 * pill.s
+                font.weight: Font.Medium
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                text: pill.dragName
+                color: Theme.subtle
+                font.family: Theme.font
+                font.pixelSize: 11 * pill.s
+                elide: Text.ElideMiddle
+                maximumLineCount: 1
+            }
+        }
+    }
+
+    /**
+     * Game-mode face: the pill docks into a flush top bar carrying only the clock
+     * and, when something plays, the current track. Everything else the desktop
+     * usually shows is deliberately gone.
+     */
+    Item {
+        id: gameBar
+        anchors.fill: parent
+        enabled: pill.mode === "game"
+        opacity: pill.mode === "game" ? Math.pow(pill.morphCloseness, 1.2) : 0
+        visible: opacity > 0.01
+
+        Behavior on opacity { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
+
+        Row {
+            anchors.left: parent.left
+            anchors.leftMargin: 18 * pill.s
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 9 * pill.s
+            opacity: Players.has ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard } }
+
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 26 * pill.s
+                height: 26 * pill.s
+                radius: 7 * pill.s
+                color: Theme.tileBg
+                clip: true
+                Image {
+                    anchors.fill: parent
+                    source: Players.artUrl
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    visible: status === Image.Ready
+                }
+            }
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                Text {
+                    text: Players.title
+                    color: Theme.cream
+                    font.family: Theme.font
+                    font.pixelSize: 12.5 * pill.s
+                    font.weight: Font.Medium
+                    elide: Text.ElideRight
+                    width: Math.min(implicitWidth, 220 * pill.s)
+                }
+                Text {
+                    text: Players.artist
+                    color: Theme.dim
+                    font.family: Theme.font
+                    font.pixelSize: 10.5 * pill.s
+                    elide: Text.ElideRight
+                    width: Math.min(implicitWidth, 220 * pill.s)
+                    visible: text.length > 0
+                }
+            }
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: clock.hhmm
+            color: Theme.cream
+            font.family: Theme.font
+            font.pixelSize: 16 * pill.s
+            font.weight: Font.DemiBold
+            font.features: ({ "tnum": 1 })
+        }
+
+        /**
+         * Volume/brightness feedback stays visible while gaming as a compact
+         * chip on the bar's right, since the full OSD face is parked behind
+         * game mode in the mode ladder. Notifications stay suppressed.
+         */
+        Row {
+            anchors.right: parent.right
+            anchors.rightMargin: 18 * pill.s
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 9 * pill.s
+            opacity: osd.flashing && (osd.kind === "volume" || osd.kind === "brightness") ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+
+            GlyphIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 14 * pill.s
+                height: 14 * pill.s
+                name: osd.kind === "brightness" ? "sun" : (osd.muted ? "speaker-off" : "speaker")
+                color: osd.kind === "volume" && osd.muted ? Theme.dim : Theme.iconDim
+                stroke: 1.7
+            }
+
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 64 * pill.s
+                height: 3 * pill.s
+                radius: 1.5 * pill.s
+                color: Theme.threadBg
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: parent.width * (osd.kind === "brightness" ? osd.brightness : osd.volume)
+                    radius: parent.radius
+                    color: osd.kind === "volume" && osd.muted ? Theme.vermDim : Theme.vermLit
+                    Behavior on width { NumberAnimation { duration: Motion.fast } }
+                }
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: Math.round((osd.kind === "brightness" ? osd.brightness : osd.volume) * 100) + "%"
+                color: osd.kind === "volume" && osd.muted ? Theme.dim : Theme.cream
+                font.family: Theme.font
+                font.pixelSize: 10.5 * pill.s
+                font.weight: Font.DemiBold
+                font.features: ({ "tnum": 1 })
+            }
+        }
+    }
+
     Item {
         id: rest
         anchors.fill: parent
-        opacity: (pill.expanded || pill.mode === "toast" || pill.mode === "osd" || pill.mode === "quickChoose" || pill.mode === "quickCount") ? 0 : Math.pow(pill.morphCloseness, 1.5)
+        opacity: (pill.expanded || pill.dragActive || pill.mode === "game" || pill.mode === "toast" || pill.mode === "osd" || pill.mode === "quickChoose" || pill.mode === "quickCount") ? 0 : Math.pow(pill.morphCloseness, 1.5)
         visible: opacity > 0.01
-        Behavior on opacity { NumberAnimation { duration: pill.mode === "rest" ? Motion.fast : 260 } }
+        Behavior on opacity { NumberAnimation { duration: pill.mode === "rest" ? Motion.fast : Math.round(260 * Motion.mult) } }
 
         Row {
             id: restRow
@@ -1297,211 +1712,327 @@ Item {
         }
     }
 
-    Mixer {
-        id: mixer
-        s: pill.s
-        open: pill.mixerOpen
-        morphCloseness: pill.morphCloseness
+    /**
+     * Morphing surfaces, one latch-once Loader each (see surfaceItem). Eager,
+     * they dominated startup and per-monitor RAM; now a surface is built
+     * synchronously on its first open and kept. Each loader fills the pill so
+     * the PillSurface inside anchors exactly as it did as a direct child.
+     *
+     * The hot trio preloads shortly after startup: the mixer needs its Pipewire
+     * trackers bound before it looks right, so a cold first open visibly popped
+     * faders in. Startup itself stays light.
+     */
+    Timer {
+        interval: 2500
+        running: true
+        onTriggered: {
+            ldMixer.active = true;
+            ldMedia.active = true;
+            ldLink.active = true;
+        }
     }
 
-    Calendar {
-        id: calendar
-        s: pill.s
-        open: pill.calendarOpen
-        morphCloseness: pill.morphCloseness
+    Loader {
+        id: ldMixer
+        active: false
+        anchors.fill: parent
+        sourceComponent: Mixer {
+            s: pill.s
+            open: pill.mixerOpen
+            morphCloseness: pill.morphCloseness
+        }
     }
 
-    Launcher {
-        id: launcher
-        s: pill.s
-        open: pill.launcherOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldCalendar
+        active: false
+        anchors.fill: parent
+        sourceComponent: Calendar {
+            s: pill.s
+            open: pill.calendarOpen
+            morphCloseness: pill.morphCloseness
+        }
     }
 
-    Clipboard {
-        id: clip
-        s: pill.s
-        open: pill.clipboardOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldLauncher
+        active: false
+        anchors.fill: parent
+        sourceComponent: Launcher {
+            s: pill.s
+            open: pill.launcherOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
-    Wallpaper {
-        id: wall
-        s: pill.s
-        open: pill.wallpaperOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldClip
+        active: false
+        anchors.fill: parent
+        sourceComponent: Clipboard {
+            s: pill.s
+            open: pill.clipboardOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
-    Power {
-        id: power
-        s: pill.s
-        open: pill.powerOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldWall
+        active: false
+        anchors.fill: parent
+        sourceComponent: Wallpaper {
+            s: pill.s
+            open: pill.wallpaperOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
-    Media {
-        id: media
-        s: pill.s
-        open: pill.mediaOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldPower
+        active: false
+        anchors.fill: parent
+        sourceComponent: Power {
+            s: pill.s
+            open: pill.powerOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
-    Link {
-        id: link
-        s: pill.s
-        open: pill.linkOpen
-        initialView: pill.linkInitialView
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldMedia
+        active: false
+        anchors.fill: parent
+        sourceComponent: Media {
+            s: pill.s
+            open: pill.mediaOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
+    }
+
+    Loader {
+        id: ldLink
+        active: false
+        anchors.fill: parent
+        sourceComponent: Link {
+            s: pill.s
+            open: pill.linkOpen
+            initialView: pill.linkInitialView
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
     onLinkOpenChanged: if (!linkOpen) linkInitialView = "main"
 
-    BatterySurface {
-        id: battery
-        s: pill.s
-        open: pill.batteryOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldBattery
+        active: false
+        anchors.fill: parent
+        sourceComponent: BatterySurface {
+            s: pill.s
+            open: pill.batteryOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
-    Settings {
-        id: settings
-        s: pill.s
-        open: pill.settingsOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldSettings
+        active: false
+        anchors.fill: parent
+        sourceComponent: Settings {
+            s: pill.s
+            open: pill.settingsOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    Keybinds {
-        id: keybinds
-        s: pill.s
-        open: pill.keybindsOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldKeybinds
+        active: false
+        anchors.fill: parent
+        sourceComponent: Keybinds {
+            s: pill.s
+            open: pill.keybindsOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    WorkspacesSurface {
-        id: workspaces
-        s: pill.s
-        open: pill.workspacesOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldWorkspaces
+        active: false
+        anchors.fill: parent
+        sourceComponent: WorkspacesSurface {
+            s: pill.s
+            open: pill.workspacesOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    Stash {
-        id: stash
-        s: pill.s
-        open: pill.stashOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldStash
+        active: false
+        anchors.fill: parent
+        sourceComponent: Stash {
+            s: pill.s
+            open: pill.stashOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    SpaceApps {
-        id: spaceapps
-        s: pill.s
-        open: pill.spaceappsOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldSpaceapps
+        active: false
+        anchors.fill: parent
+        sourceComponent: SpaceApps {
+            s: pill.s
+            open: pill.spaceappsOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    Recorder {
-        id: recorder
-        s: pill.s
-        screenName: pill.screenName
-        open: pill.recorderOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldRecorder
+        active: false
+        anchors.fill: parent
+        sourceComponent: Recorder {
+            s: pill.s
+            screenName: pill.screenName
+            open: pill.recorderOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
-    SysmonSurface {
-        id: sysmon
-        s: pill.s
-        open: pill.sysmonOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
+    Loader {
+        id: ldSysmon
+        active: false
+        anchors.fill: parent
+        sourceComponent: SysmonSurface {
+            s: pill.s
+            open: pill.sysmonOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+        }
     }
 
-    Appearance {
-        id: appearance
-        s: pill.s
-        open: pill.appearanceOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldAppearance
+        active: false
+        anchors.fill: parent
+        sourceComponent: Appearance {
+            s: pill.s
+            open: pill.appearanceOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    Updates {
-        id: updates
-        s: pill.s
-        open: pill.updatesOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldUpdates
+        active: false
+        anchors.fill: parent
+        sourceComponent: Updates {
+            s: pill.s
+            open: pill.updatesOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    Display {
-        id: display
-        s: pill.s
-        open: pill.displayOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldDisplay
+        active: false
+        anchors.fill: parent
+        sourceComponent: Display {
+            s: pill.s
+            open: pill.displayOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    Input {
-        id: input
-        s: pill.s
-        open: pill.inputOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldInput
+        active: false
+        anchors.fill: parent
+        sourceComponent: Input {
+            s: pill.s
+            open: pill.inputOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    Look {
-        id: look
-        s: pill.s
-        open: pill.lookOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldLook
+        active: false
+        anchors.fill: parent
+        sourceComponent: Look {
+            s: pill.s
+            open: pill.lookOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    IdleLock {
-        id: idlelock
-        s: pill.s
-        open: pill.idlelockOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldIdlelock
+        active: false
+        anchors.fill: parent
+        sourceComponent: IdleLock {
+            s: pill.s
+            open: pill.idlelockOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    AnimationSurface {
-        id: animation
-        s: pill.s
-        open: pill.animationOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldAnimation
+        active: false
+        anchors.fill: parent
+        sourceComponent: AnimationSurface {
+            s: pill.s
+            open: pill.animationOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
-    FontPicker {
-        id: fontpicker
-        s: pill.s
-        open: pill.fontpickerOpen
-        morphCloseness: pill.morphCloseness
-        onRequestClose: pill.requestClose()
-        onRequestSurface: (name) => pill.requestSurface(name)
+    Loader {
+        id: ldFontpicker
+        active: false
+        anchors.fill: parent
+        sourceComponent: FontPicker {
+            s: pill.s
+            open: pill.fontpickerOpen
+            morphCloseness: pill.morphCloseness
+            onRequestClose: pill.requestClose()
+            onRequestSurface: (name) => pill.requestSurface(name)
+        }
     }
 
     Osd {

@@ -2,7 +2,9 @@
 MAGICK_CONFIGURE_PATH="$(dirname "$0")/magick-policy"
 export MAGICK_CONFIGURE_PATH
 
-wpdir="$HOME/Pictures/Wallpapers"
+flags="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin/flags.json"
+wpdir=$(jq -r '.wallpaperDir // ""' "$flags" 2>/dev/null || echo "")
+[ -n "$wpdir" ] || wpdir="$HOME/Ricelin/wallpapers"
 cache="${XDG_CACHE_HOME:-$HOME/.cache}/ricelin-wp-thumbs"
 mkdir -p "$cache"
 

@@ -27,7 +27,7 @@ Singleton {
     property string current: ""
     property bool pending: false
 
-    readonly property string wpDir: Quickshell.env("HOME") + "/Pictures/Wallpapers"
+    readonly property string wpDir: Flags.wallpaperDir.length > 0 ? Flags.wallpaperDir : (Quickshell.env("HOME") + "/Ricelin/wallpapers")
     readonly property string thumbDir: (Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/ricelin-wp-thumbs/"
     readonly property string thumbScript: Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-thumbs.sh"
     readonly property string setScript: Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper.sh"

@@ -56,10 +56,10 @@ hl.window_rule({
 })
 
 hl.window_rule({
-    name   = "float-emulator",
-    match  = { class = "([Ee]mulator|qemu-system-x86_64)" },
+    name   = "float-vibelark",
+    match  = { class = "App", title = "VibeLark" },
     float  = true,
-    size   = { 420, 840 },
+    size   = { 1480, 960 },
     center = true,
 })
 

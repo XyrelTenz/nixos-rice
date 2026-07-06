@@ -55,7 +55,11 @@ Singleton {
     property var preferred: null
 
     property bool ready: false
-    Component.onCompleted: ready = true
+    Component.onCompleted: {
+        ready = true;
+        resolveTwitch();
+        resolveNetflix();
+    }
 
     onListChanged: {
         if (manualActive && list.indexOf(manualActive) < 0)
@@ -97,19 +101,37 @@ Singleton {
         model: Mpris.players
         delegate: QtObject {
             required property var modelData
-            readonly property bool playing: (modelData && !Players.isProxy(modelData)) ? modelData.isPlaying : false
+            readonly property bool real: modelData && !Players.isProxy(modelData)
+            readonly property bool playing: real ? modelData.isPlaying : false
+            readonly property string title: real && modelData.trackTitle ? modelData.trackTitle : ""
+
             onPlayingChanged: {
-                if (!Players.ready || !playing)
+                if (!Players.ready)
                     return;
-                if (!Players.isIdle(modelData) && !Players.otherPlaying(modelData))
-                    Players.preferred = modelData;
+                if (playing) {
+                    if (!Players.isIdle(modelData) && !Players.otherPlaying(modelData))
+                        Players.preferred = modelData;
+                    Players.announce(modelData);
+                } else if (modelData === Players.active) {
+                    Players.announce(modelData);
+                }
+            }
+            /**
+             * Browser DRM players (Netflix in Brave) often land their title while
+             * isPlaying still reads false and never cleanly toggle it, so the
+             * active player announces on any real title, not only mid-playback.
+             */
+            onTitleChanged: {
+                if (Players.ready && title.length > 0 && (playing || modelData === Players.active))
+                    Players.announce(modelData);
             }
         }
     }
 
     readonly property bool has: active !== null
     readonly property bool playing: has && active.isPlaying
-    readonly property string title: has && active.trackTitle ? active.trackTitle : ""
+    /** Falls back to the service label so a titleless DRM stream still reads as its site. */
+    readonly property string title: has ? refineTitle(active, active.trackTitle || labelOf(active)) : ""
     readonly property string artist: has ? Theme.joinArtists(active.trackArtists, active.trackArtist) : ""
     readonly property string trackUrl: urlOf(active)
     readonly property string artUrl: artUrlFor(active)
@@ -121,8 +143,17 @@ Singleton {
         ? source.charAt(0).toUpperCase() + source.slice(1) : ""
 
     /** Browsers reuse one art path per video, so fold player and title in to catch a new song. */
-    readonly property string trackKey: has
-        ? ((active.dbusName || "") + "|" + title + "|" + artUrl) : ""
+    function keyFor(p) {
+        return p ? ((p.dbusName || "") + "|" + (p.trackTitle || "") + "|" + artUrlFor(p)) : "";
+    }
+    readonly property string trackKey: has ? keyFor(active) : ""
+
+    /**
+     * Fired when a player starts, pauses or changes track in a way worth a flash.
+     * The OSD listens and announces that player, even one that is not the active
+     * surface source, so starting a video over your music still tells you.
+     */
+    signal announce(var player)
 
     function urlOf(p) {
         return (p && p.metadata) ? (p.metadata["xesam:url"] || "") : "";
@@ -151,6 +182,26 @@ Singleton {
         return p && p.trackTitle ? p.trackTitle : "";
     }
 
+    /**
+     * The player's own themed app icon, matched off its desktop entry so any
+     * source carries its real logo. Matching is the same window-to-entry pass the
+     * tray uses, with a direct icon-theme lookup as the fallback.
+     */
+    function appIconFor(p) {
+        if (!p)
+            return "";
+        var id = (p.desktopEntry && p.desktopEntry.length > 0) ? p.desktopEntry : (p.identity || "");
+        if (id.length === 0)
+            return "";
+        var apps = DesktopEntries.applications.values;
+        for (var i = 0; i < apps.length; i++) {
+            var e = apps[i];
+            if (e && e.id && e.id.toLowerCase() === id.toLowerCase() && e.icon)
+                return Quickshell.iconPath(e.icon, "application-x-executable");
+        }
+        return Quickshell.iconPath(id.toLowerCase(), "application-x-executable");
+    }
+
     function artUrlFor(p) {
         if (!p)
             return "";
@@ -159,6 +210,9 @@ Singleton {
         var u = urlOf(p);
         if (p === active && twitchAvatar.length > 0 && isTwitch(u))
             return twitchAvatar;
+        var nid = netflixIdOf(u);
+        if (nid.length > 0 && nid === netflixId && netflixArt.length > 0)
+            return netflixArt;
         return derivedThumb(u);
     }
 
@@ -212,10 +266,65 @@ Singleton {
         return "";
     }
 
+    /**
+     * Netflix MPRIS is a stub: xesam:title is the literal page title "Netflix"
+     * and there is no art. The public title page still ships og:title/og:image
+     * for any video id, so resolve the real show name and its cover async and
+     * swap them in wherever the raw metadata would just say "Netflix".
+     */
+    property string netflixName: ""
+    property string netflixArt: ""
+    property string netflixId: ""
+
+    function netflixIdOf(url) {
+        var m = url.match(/^https?:\/\/(?:www\.)?netflix\.com\/(?:watch|title)\/(\d+)/);
+        return m ? m[1] : "";
+    }
+
+    function resolveNetflix() {
+        var id = netflixIdOf(trackUrl);
+        if (id === netflixId)
+            return;
+        netflixId = id;
+        netflixName = "";
+        netflixArt = "";
+        if (id.length === 0)
+            return;
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 8000;
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE || xhr.status !== 200 || root.netflixId !== id)
+                return;
+            var t = xhr.responseText.match(/property="og:title"\s+content="([^"]+)"|og:title"\s+content="([^"]+)"/);
+            var i = xhr.responseText.match(/property="og:image"\s+content="([^"]+)"|og:image"\s+content="([^"]+)"/);
+            var name = t ? (t[1] || t[2] || "") : "";
+            name = name.replace(/^Watch\s+/i, "").replace(/\s*\|\s*Netflix\s*$/i, "");
+            if (name.length > 0)
+                root.netflixName = name;
+            var img = i ? (i[1] || i[2] || "") : "";
+            if (img.indexOf("https:") === 0)
+                root.netflixArt = img;
+        };
+        xhr.open("GET", "https://www.netflix.com/title/" + id);
+        xhr.send();
+    }
+
+    /** Swaps a stub browser title for the resolved show name where one exists. */
+    function refineTitle(p, raw) {
+        if (p && netflixId.length > 0 && netflixName.length > 0
+            && netflixIdOf(urlOf(p)) === netflixId
+            && (!raw || raw === "Netflix"))
+            return netflixName;
+        return raw;
+    }
+
     /** Twitch exposes no MPRIS art; resolve the streamer avatar async, live preview stands in. */
     property string twitchAvatar: ""
     property string twitchChannel: ""
-    onTrackUrlChanged: resolveTwitch()
+    onTrackUrlChanged: {
+        resolveTwitch();
+        resolveNetflix();
+    }
 
     function resolveTwitch() {
         var ch = twitchChannelOf(trackUrl);

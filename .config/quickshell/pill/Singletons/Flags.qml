@@ -19,6 +19,7 @@ Singleton {
     property alias clockSeconds: adapter.clockSeconds
     property alias showGlyphs: adapter.showGlyphs
     property alias paletteMode: adapter.paletteMode
+    property alias wallpaperDir: adapter.wallpaperDir
     property alias uiScale: adapter.uiScale
     property alias reduceMotion: adapter.reduceMotion
     property alias manualHue: adapter.manualHue
@@ -40,6 +41,10 @@ Singleton {
     property alias idleSuspendMin: adapter.idleSuspendMin
     property alias weatherCity: adapter.weatherCity
     property alias musicViz: adapter.musicViz
+    property alias gameMode: adapter.gameMode
+    property alias gamePrevDnd: adapter.gamePrevDnd
+    property alias gamePrevViz: adapter.gamePrevViz
+    property alias gamePrevAwake: adapter.gamePrevAwake
     property alias nightLightMode: adapter.nightLightMode
     property alias nightLightTemp: adapter.nightLightTemp
     property alias nightLightOnMin: adapter.nightLightOnMin
@@ -67,6 +72,8 @@ Singleton {
             property bool clockSeconds: false
             property bool showGlyphs: true
             property string paletteMode: "static"
+            /** Empty means fall back to ~/Ricelin/wallpapers. Lives in user state so an in-app update never clobbers a custom folder. */
+            property string wallpaperDir: ""
             property real uiScale: 1.0
             property bool reduceMotion: false
             property int manualHue: 30
@@ -88,6 +95,10 @@ Singleton {
             property int idleSuspendMin: 0
             property string weatherCity: ""
             property bool musicViz: true
+            property bool gameMode: false
+            property bool gamePrevDnd: false
+            property bool gamePrevViz: true
+            property bool gamePrevAwake: false
             property string nightLightMode: "off"
             property int nightLightTemp: 4000
             property int nightLightOnMin: 1260

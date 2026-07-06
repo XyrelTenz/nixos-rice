@@ -6,7 +6,7 @@ hl.bind(mod .. " + T", hl.dsp.exec_cmd("ghostty"))
 hl.bind(mod .. " + W", hl.dsp.window.fullscreen())
 hl.bind(mod .. " + F", hl.dsp.exec_cmd("brave"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd("dolphin"))
-hl.bind(mod .. " + T", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mod .. " + SHIFT + T", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mod .. " + M", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/minimize-toggle.sh"))
 hl.bind(mod .. " + SHIFT + M", hl.dsp.workspace.toggle_special("minimized"))
 
@@ -56,6 +56,8 @@ hl.bind(mod .. " + L", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scrip
 hl.bind(mod .. " + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/wallpaper.sh"))
 hl.bind(mod .. " + W", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/open-surface.sh wallpaper"))
 hl.bind(mod .. " + D", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/record.sh"))
+hl.bind(mod .. " + G",          hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/open-surface.sh gameMode"))
+
 
 hl.bind(
 	"XF86AudioRaiseVolume",
@@ -73,4 +75,3 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"), { loc
 hl.bind("XF86AudioPlay", hl.dsp.global("quickshell:mediaToggle"), { locked = true })
 hl.bind("XF86AudioNext", hl.dsp.global("quickshell:mediaNext"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.global("quickshell:mediaPrev"), { locked = true })
-

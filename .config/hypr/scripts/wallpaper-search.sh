@@ -36,7 +36,10 @@ download() {
     url="${1:-}"
     [ -n "$url" ] || exit 1
 
-    dir="$HOME/Pictures/Wallpapers/downloads"
+    flags="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin/flags.json"
+    wpdir=$(jq -r '.wallpaperDir // ""' "$flags" 2>/dev/null || echo "")
+    [ -n "$wpdir" ] || wpdir="$HOME/Ricelin/wallpapers"
+    dir="$wpdir/downloads"
     mkdir -p "$dir"
 
     tmp=$(mktemp "${TMPDIR:-/tmp}/ddg-wp.XXXXXX")

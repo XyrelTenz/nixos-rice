@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WPDIR="$HOME/Pictures/Wallpapers"
+flags_file="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin/flags.json"
+WPDIR=$(jq -r '.wallpaperDir // ""' "$flags_file" 2>/dev/null || echo "")
+[ -n "$WPDIR" ] || WPDIR="$HOME/Ricelin/wallpapers"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin-wallpaper"
 BAG="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin-wallpaper-bag"
 
@@ -88,7 +90,6 @@ awww img "$pic" \
 mkdir -p "$(dirname "$STATE")"
 printf '%s\n' "$pic" > "$STATE"
 
-flags_file="${XDG_STATE_HOME:-$HOME/.local/state}/ricelin/flags.json"
 pmode=$(jq -r '.paletteMode // "static"' "$flags_file" 2>/dev/null || echo static)
 if [ "$pmode" = "manual" ]; then
     mh=$(jq -r '.manualHue // 30' "$flags_file" 2>/dev/null || echo 30)

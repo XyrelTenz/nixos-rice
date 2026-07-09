@@ -1,6 +1,7 @@
-font-family = IBM Plex Mono
-font-size = 12 
-adjust-cell-height = 8%
+# font-family = IBM Plex Mono
+font-family = "Victor Mono"
+font-size = 14
+adjust-cell-height = 10%
 
 window-padding-x = 14
 window-padding-y = 12

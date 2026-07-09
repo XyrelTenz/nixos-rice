@@ -1,9 +1,9 @@
 local mod = "SUPER"
 
 hl.bind(mod .. " + Q", hl.dsp.window.close())
-hl.bind("CTRL + SHIFT + Q", hl.dsp.window.kill())
+hl.bind(mod .. "+ SHIFT + Q", hl.dsp.window.kill())
 hl.bind(mod .. " + T", hl.dsp.exec_cmd("ghostty"))
-hl.bind(mod .. " + W", hl.dsp.window.fullscreen())
+hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen())
 hl.bind(mod .. " + F", hl.dsp.exec_cmd("brave"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd("dolphin"))
 hl.bind(mod .. " + SHIFT + T", hl.dsp.window.float({ action = "toggle" }))
@@ -56,8 +56,7 @@ hl.bind(mod .. " + L", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scrip
 hl.bind(mod .. " + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/wallpaper.sh"))
 hl.bind(mod .. " + W", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/open-surface.sh wallpaper"))
 hl.bind(mod .. " + D", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/record.sh"))
-hl.bind(mod .. " + G",          hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/open-surface.sh gameMode"))
-
+hl.bind(mod .. " + G", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/open-surface.sh gameMode"))
 
 hl.bind(
 	"XF86AudioRaiseVolume",

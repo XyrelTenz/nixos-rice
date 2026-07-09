@@ -9,6 +9,7 @@
     ibm-plex
     lilex
     nerd-fonts.lilex
+    victor-mono
   ];
 
   fonts.fontconfig = {

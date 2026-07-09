@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-neovim.url = "github:nixos/nixpkgs/069ba8e76f8b0d1c4abb14b18c42c2ddc4d6e433";
     hyprland.url = "github:hyprwm/Hyprland";
     home-manager = {
       url = "github:nix-community/home-manager";

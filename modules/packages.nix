@@ -33,7 +33,7 @@ in {
     appimage-run
     devin-desktop
 
-    neovim
+    inputs.nixpkgs-neovim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.neovim
     android-tools
     jdk21
     tree-sitter

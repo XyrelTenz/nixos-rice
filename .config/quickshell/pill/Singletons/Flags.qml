@@ -28,6 +28,8 @@ Singleton {
     property alias uiFont: adapter.uiFont
     property alias pillOpacity: adapter.pillOpacity
     property alias pillBlur: adapter.pillBlur
+    property alias topGap: adapter.topGap
+    property alias appGap: adapter.appGap
     property alias recordCountdown: adapter.recordCountdown
     property alias recordDir: adapter.recordDir
     property alias recordFps: adapter.recordFps
@@ -72,7 +74,7 @@ Singleton {
             property bool clockSeconds: false
             property bool showGlyphs: true
             property string paletteMode: "static"
-            /** Empty means fall back to ~/Ricelin/wallpapers. Lives in user state so an in-app update never clobbers a custom folder. */
+            /** Empty means fall back to ~/Pictures/Wallpapers. Lives in user state so an in-app update never clobbers a custom folder. */
             property string wallpaperDir: ""
             property real uiScale: 1.0
             property bool reduceMotion: false
@@ -82,6 +84,10 @@ Singleton {
             property string uiFont: ""
             property real pillOpacity: 1.0
             property bool pillBlur: false
+            /** Top margin as a fraction of the shipped 8px. 0 sits the pill flush to the screen edge. */
+            property real topGap: 1.0
+            /** Pill-to-window band as a fraction of the shipped 12px. 0 tucks the windows flush under the pill. */
+            property real appGap: 1.0
             property int recordCountdown: 5
             property string recordDir: ""
             property int recordFps: 60

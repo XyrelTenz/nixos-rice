@@ -468,9 +468,14 @@ PillSurface {
         anchors.centerIn: parent
         visible: root.itemCount === 0 && !searchProc.running
         text: {
+            var path = Walls.wpDir;
+            var home = Quickshell.env("HOME");
+            if (home && path.indexOf(home) === 0) {
+                path = "~" + path.substring(home.length);
+            }
             if (!root.searching)
-                return "No wallpapers in ~/Pictures/Wallpapers";
-            return root.query.length ? "no results" : "No wallpapers in ~/Pictures/Wallpapers";
+                return "No wallpapers in " + path;
+            return root.query.length ? "no results" : "No wallpapers in " + path;
         }
         color: Theme.faint
         font.family: Theme.font

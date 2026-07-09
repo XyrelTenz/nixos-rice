@@ -62,6 +62,7 @@ usage() {
     urow log     "[pill·lock]"     "follow the quickshell log"      "(pill)"
     urow update  ""                "check, then apply an update"     ""
     urow status  ""                "what's running and the version"  ""
+    urow uninstall ""              "remove the configs, restore backups" ""
     gap
 }
 
@@ -205,6 +206,13 @@ cmd_update() {
     act "updated to" "$version"
 }
 
+cmd_uninstall() {
+    installer="${XDG_DATA_HOME:-$HOME/.local/share}/ricelin/installer/ricelin_install.py"
+    [ -f "$installer" ] || die "installer not found ($installer); remove ~/.config/hypr and ~/.config/quickshell by hand, your originals sit next to them as .bak"
+    command -v python3 >/dev/null 2>&1 || die "python3 not found"
+    exec python3 "$installer" --uninstall
+}
+
 cmd_status() {
     sec "ricelin"
     gap
@@ -228,6 +236,7 @@ case "$cmd" in
     log) cmd_log "$@" ;;
     update) cmd_update ;;
     status) cmd_status ;;
+    uninstall) cmd_uninstall ;;
     "" | -h | --help | help) usage ;;
     *) die "unknown command '$cmd' (try: ricelin help)" ;;
 esac

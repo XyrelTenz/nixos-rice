@@ -2,9 +2,9 @@ local M = {}
 M.mappings = require("custom.mappings")
 
 M.base46 = {
-	theme = "chadtain",
+	theme = "vscode_dark",
 	transparent = true,
-	theme_toggle = { "chadtain", "chadtain" },
+	theme_toggle = { "vscode_dark", "vscode_dark" },
 }
 
 M.mappings = {

@@ -68,6 +68,8 @@ SettingsSurface {
             r.push({ item: opInactRow, kind: "scrub", bump: function (d) { opInactScrub.bump(d); } });
         }
         if (pillGrp.open) {
+            r.push({ item: pillGapRow, kind: "scrub", bump: function (d) { pillGapScrub.bump(d); } });
+            r.push({ item: appGapRow, kind: "scrub", bump: function (d) { appGapScrub.bump(d); } });
             r.push({ item: pillOpRow, kind: "scrub", bump: function (d) { pillOpScrub.bump(d); } });
             r.push({ item: pillBlurRow, kind: "toggle", get: function () { return Flags.pillBlur; }, set: function (v) { Flags.pillBlur = v; root.applyPillBlur(v); } });
         }
@@ -179,6 +181,8 @@ SettingsSurface {
             activeOpacity: root.activeOpacity,
             inactiveOpacity: root.inactiveOpacity,
             pillOpacity: Flags.pillOpacity,
+            topGap: Flags.topGap,
+            appGap: Flags.appGap,
             nlTemp: Flags.nightLightTemp,
             nlOnMin: Flags.nightLightOnMin,
             nlOffMin: Flags.nightLightOffMin
@@ -884,6 +888,36 @@ SettingsSurface {
             }
 
             Group { id: pillGrp; title: "Pill"
+
+            FieldRow {
+                id: pillGapRow
+                label: "Pill gap"
+                caption: "Distance from the screen top. Lower squeezes the pill up and pulls windows with it."
+                icon: "chevron-up"
+                ScrubValue {
+                    id: pillGapScrub
+                    s: root.s
+                    value: Flags.topGap
+                    openValue: root.base.topGap
+                    from: 0; to: 2; step: 0.1; decimals: 1
+                    onEdited: v => Flags.topGap = v
+                }
+            }
+
+            FieldRow {
+                id: appGapRow
+                label: "App gap"
+                caption: "Distance between the pill and the windows below it. Lower pulls them up under the pill."
+                icon: "chevron-down"
+                ScrubValue {
+                    id: appGapScrub
+                    s: root.s
+                    value: Flags.appGap
+                    openValue: root.base.appGap
+                    from: 0; to: 2; step: 0.1; decimals: 1
+                    onEdited: v => Flags.appGap = v
+                }
+            }
 
             FieldRow {
                 id: pillOpRow

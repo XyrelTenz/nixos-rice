@@ -55,16 +55,17 @@
       set -g default-terminal "tmux-256color"
       set -ag terminal-overrides ",xterm-256color:RGB"
 
-      # Fallback warm theme (overridden by matugen/wallcolors on each wallpaper change)
+      # Fallback warm pill theme (overridden by wallcolors on each wallpaper change)
+      # Nerd Font rounded caps: U+E0B6 = , U+E0B4 = 
       set -g status-style 'bg=default fg=#e6d6cb'
-      set -g status-left '#[fg=#1c120c,bg=#e0563b,bold] #S #[bg=default,fg=#e0563b] '
-      set -g status-left-length 20
-      set -g window-status-current-style 'fg=#e0563b,bold'
-      set -g window-status-current-format ' #I:#W '
+      set -g status-left '#[fg=#e0563b,bg=default]#[fg=#1c120c,bg=#e0563b,bold] #S #[fg=#e0563b,bg=default] '
+      set -g status-left-length 30
+      set -g window-status-current-format '#[fg=#e0563b,bg=default]#[fg=#1c120c,bg=#e0563b,bold] #I:#W #[fg=#e0563b,bg=default]'
+      set -g window-status-current-style '
       set -g window-status-style 'fg=#594636'
       set -g window-status-format ' #I:#W '
-      set -g status-right '#[fg=#e0563b]#[fg=#1c120c,bg=#e0563b,bold] %H:%M #[fg=#e6d6cb,bg=#594636] %d-%b-%y '
-      set -g status-right-length 50
+      set -g status-right '#[fg=#e0563b,bg=default]#[fg=#1c120c,bg=#e0563b,bold] %H:%M #[fg=#e0563b,bg=default]#[fg=#594636,bg=default] %d-%b-%y '
+      set -g status-right-length 60
       set -g pane-border-style 'fg=#2e231b'
       set -g pane-active-border-style 'fg=#e0563b'
       set -g message-style 'bg=#2e231b,fg=#e6d6cb'

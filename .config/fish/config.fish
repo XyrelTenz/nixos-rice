@@ -1,3 +1,14 @@
+# ── Auto-launch tmux ──────────────────────────────────────────────────────────
+# Attach to (or create) a session named 'main' on every new interactive shell,
+# unless we are already inside tmux, a VS Code/Cursor terminal, or a raw tty.
+if status is-interactive
+    and not set -q TMUX
+    and not set -q VSCODE_INJECTION
+    and test "$TERM_PROGRAM" != vscode
+    and command -q tmux
+    exec tmux new-session -As main
+end
+
 if status is-interactive
     # ── Useful abbreviations ──────────────────────────────────────────
     abbr -a ll  'ls -lah'
@@ -45,7 +56,5 @@ if status is-interactive
 end
 
 function fish_greeting
-    if status is-interactive
-        ~/.config/fish/torii-greeting.sh
-    end
+    # disabled greeting
 end

@@ -2,7 +2,7 @@
 # font-family = "Victor Mono"
 font-family = "JetBrainsMono Nerd Font"
 # font-family = "Lilex"
-font-size = 10.5
+font-size = 8
 adjust-cell-height = 0%
 
 window-padding-x = 14

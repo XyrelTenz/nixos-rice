@@ -40,6 +40,58 @@
   programs.fish.enable = true;
   programs.zoxide.enable = true;
 
+  programs.tmux = {
+    enable = true;
+    keyMode = "vi";
+    extraConfig = ''
+      # Mouse support
+      set -g mouse on
+      set -g history-limit 10000
+
+      # Statusline on top
+      set -g status-position top
+
+      # True color support
+      set -g default-terminal "tmux-256color"
+      set -ag terminal-overrides ",xterm-256color:RGB"
+
+      # Fallback warm theme (overridden by matugen below if the file exists)
+      set -g status-style 'bg=default fg=#e6d6cb'
+      set -g status-left '#[fg=#1c120c,bg=#e0563b,bold] #S #[bg=default,fg=#e0563b] '
+      set -g status-left-length 20
+      set -g window-status-current-style 'fg=#e0563b,bold'
+      set -g window-status-current-format ' #I:#W '
+      set -g window-status-style 'fg=#594636'
+      set -g window-status-format ' #I:#W '
+      set -g status-right '#[fg=#e0563b]#[fg=#1c120c,bg=#e0563b,bold] %H:%M #[fg=#e6d6cb,bg=#594636] %d-%b-%y '
+      set -g status-right-length 50
+      set -g pane-border-style 'fg=#2e231b'
+      set -g pane-active-border-style 'fg=#e0563b'
+      set -g message-style 'bg=#2e231b,fg=#e6d6cb'
+
+      # Source matugen/ricelin generated colors — overrides the fallback above
+      # whenever the wallpaper picker updates them.
+      if-shell "test -f $HOME/.cache/ricelin/tmux-colors.conf" \
+        "source-file $HOME/.cache/ricelin/tmux-colors.conf"
+
+      # Ctrl+Tab → next window  |  Ctrl+Shift+Tab → previous window
+      bind -n C-Tab   next-window
+      bind -n C-S-Tab previous-window
+
+      # Fast pane switching (Alt-Arrow)
+      bind -n M-Left  select-pane -L
+      bind -n M-Right select-pane -R
+      bind -n M-Up    select-pane -U
+      bind -n M-Down  select-pane -D
+
+      # Split keys
+      bind | split-window -h -c "#{pane_current_path}"
+      bind - split-window -v -c "#{pane_current_path}"
+      unbind '"'
+      unbind %
+    '';
+  };
+
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;

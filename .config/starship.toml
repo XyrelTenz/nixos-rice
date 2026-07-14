@@ -1,67 +1,12 @@
-# ============================================================
-#  starship.toml — cyberdream · Windows PowerShell · MAXED
-# ============================================================
-
 format = """
 [╭─────⭕ ](fg:#ffffff)\
 $username\
-[   📁 ](fg:#ffffff)\
+[    📁 ](fg:#ffffff)\
 $directory\
-\n[│](fg:#ffffff)  \
-[Branch:](dimmed) \
-$git_branch\
-[  ](fg:#ffffff)\
-[Status:](dimmed) \
-$git_status\
-[  ](fg:#ffffff)\
-[Commit:](dimmed) \
-$git_commit\
-[  ](fg:#ffffff)\
-[State:](dimmed) \
-$git_state\
-[  ](fg:#ffffff)\
-[Metrics:](dimmed) \
-$git_metrics\
-\n[│](fg:#ffffff)  \
-[MEM: ](dimmed)\
-$memory_usage\
-[   BAT: ](dimmed)\
-$battery\
-[   ](dimmed)\
-$time\
-\n[│](fg:#ffffff)  \
-[ENV: ](dimmed)\
-$env_var\
-[   PKG: ](dimmed)\
-$package\
-[   CC: ](dimmed)\
-$c\
-[   CMAKE: ](dimmed)\
-$cmake\
-\n[│](fg:#ffffff)  \
-[TOOLS: ](dimmed)\
-$nodejs\
-$python\
-$conda\
-$rust\
-$golang\
-$java\
-$kotlin\
-$lua\
-$ruby\
-$php\
-$docker_context\
-$terraform\
-$helm\
-$kubernetes\
-\n[│](fg:#ffffff)  \
-$cmd_duration\
-[   ](fg:#ffffff)\
-$jobs\
-[   ](fg:#ffffff)\
-$shlvl\
-[   ](fg:#ffffff)\
-$shell\
+${git_branch}${git_status}${git_commit}${git_state}${git_metrics}\
+${env_var}${package}${c}${cmake}\
+${nodejs}${python}${conda}${rust}${golang}${java}${kotlin}${lua}${ruby}${php}${docker_context}${terraform}${helm}${kubernetes}\
+${cmd_duration}${jobs}${shlvl}${shell}\
 [\n╰─](fg:#ffffff)\
 $character\
 """
@@ -84,7 +29,7 @@ color_violet = '#a78bfa'
 red          = '#ff3b25'
 
 # ============================================================
-#  Row 1 — Identity
+#   Row 1 — Identity
 # ============================================================
 
 [username]
@@ -93,15 +38,14 @@ style_user  = "fg:#ff9318 bold underline"
 style_root  = "fg:#ff3b25 bold underline"
 format      = "[$user]($style)"
 
-
 [directory]
-style             = "fg:#ffffff bold"
-format            = "[$path ]($style)"
-truncation_length = 100
-truncation_symbol = ""
-use_os_path_sep   = false
-truncate_to_repo  = false
-use_logical_path  = true
+style               = "fg:#ffffff bold"
+format              = "[$path ]($style)"
+truncation_length   = 100
+truncation_symbol   = ""
+use_os_path_sep     = false
+truncate_to_repo    = false
+use_logical_path    = true
 
 [directory.substitutions]
 "Documents" = "Docs"
@@ -110,13 +54,13 @@ use_logical_path  = true
 "Projects"  = "Proj"
 
 # ============================================================
-#  Row 2 — Git full details
+#   Row 2 — Git full details (Dynamic Newline)
 # ============================================================
 
 [git_branch]
 symbol   = "⎇"
 style    = "fg:#eaff00 bold"
-format   = "[$symbol $branch(:$remote_branch) ]($style)"
+format   = "\n[│](fg:#ffffff)  [$symbol $branch(:$remote_branch) ]($style)"
 
 [git_status]
 style      = "fg:#ff8c00"
@@ -142,13 +86,13 @@ tag_disabled       = false
 [git_state]
 style           = "fg:#ff3b25 bold"
 format          = "[$state($progress_current/$progress_total) ]($style)"
-rebase          = "REBASE"
-merge           = "MERGE"
-revert          = "REVERT"
-cherry_pick     = "CHERRY"
-bisect          = "BISECT"
-am              = "AM"
-am_or_rebase    = "AM/REBASE"
+rebase          = "REBASE "
+merge           = "MERGE "
+revert          = "REVERT "
+cherry_pick     = "CHERRY "
+bisect          = "BISECT "
+am              = "AM "
+am_or_rebase    = "AM/REBASE "
 
 [git_metrics]
 disabled              = false
@@ -158,170 +102,144 @@ format                = "[+$added ]($added_style)[-$deleted ]($deleted_style)"
 only_nonzero_diffs    = true
 
 # ============================================================
-#  Row 3 — Shell info
-# ============================================================
-
-[cmd_duration]
-min_time          = 500
-style             = "fg:#c084fc bold"
-format            = "[took $duration ]($style)"
-show_milliseconds = true
-min_time_to_notify = 10000
-
-[jobs]
-symbol    = "~"
-style     = "fg:#00eaff bold"
-format    = "[$symbol$number jobs ]($style)"
-threshold = 1
-
-[shlvl]
-disabled  = false
-style     = "fg:#ff8c00 bold"
-format    = "[SHLVL:$shlvl ]($style)"
-threshold = 2
-repeat    = false
-
-
-# ============================================================
-#  Row 4 — System stats
+#   Row 3 — System Stats (Completely Disabled)
 # ============================================================
 
 [memory_usage]
-disabled  = false
-threshold = 0
-style     = "fg:#a78bfa bold"
-format    = "[$ram_pct ($ram/$swap_pct swap) ]($style)"
+disabled  = true
 
 [battery]
-full_symbol        = "FULL"
-charging_symbol    = "CHG"
-discharging_symbol = "BAT"
-unknown_symbol     = "BAT?"
-empty_symbol       = "LOW!"
-format             = "[$symbol $percentage ]($style)"
-
-[[battery.display]]
-threshold = 15
-style     = "fg:#ff3b25 bold"
-
-[[battery.display]]
-threshold = 50
-style     = "fg:#ff8c00 bold"
-
-[[battery.display]]
-threshold = 100
-style     = "fg:#00ff15 bold"
+disabled = true
 
 [time]
-disabled    = false
-time_format = "%d %b %Y  %H:%M:%S"
-style       = "fg:#00eaff bold"
-format      = "[$time ]($style)"
-
+disabled = true
 
 # ============================================================
-#  Row 5 — Env vars + package + build tools
+#   Row 4 — Env vars + package + build tools (Dynamic Newline)
 # ============================================================
 
 [env_var.VIRTUAL_ENV]
 variable = "VIRTUAL_ENV"
 style    = "fg:#ff2c84"
-format   = "[$env_value ]($style)"
+format   = "\n[│](fg:#ffffff)  [$env_value ]($style)"
 default  = ""
 
 [package]
 disabled      = false
 style         = "fg:#ff8c00 bold"
-format        = "[$symbol$version ]($style)"
+format        = "\n[│](fg:#ffffff)  [$symbol$version ]($style)"
 symbol        = "pkg:"
 version_format = "v${raw}"
 
 [c]
 disabled = false
 style    = "fg:#4d9fff bold"
-format   = "[$symbol$version ]($style)"
+format   = "\n[│](fg:#ffffff)  [$symbol$version ]($style)"
 symbol   = "C:"
 
 [cmake]
 disabled = false
 style    = "fg:#4d9fff"
-format   = "[$symbol$version ]($style)"
+format   = "\n[│](fg:#ffffff)  [$symbol$version ]($style)"
 symbol   = "cmake:"
 
 # ============================================================
-#  Row 6 — Toolchain (auto-hides per directory)
+#   Row 5 — Toolchain (Dynamic Newline on the first active tool)
 # ============================================================
 
 [nodejs]
 symbol = "Node"
-format = "[$symbol:$version ](fg:#00ff15)"
+format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#00ff15)"
 
 [python]
 symbol        = "Py"
-format        = "[$symbol:$version( ($virtualenv)) ](fg:#eaff00)"
+format        = "\n[│](fg:#ffffff)  [$symbol:$version( ($virtualenv)) ](fg:#eaff00)"
 python_binary = ["python3", "python"]
 
 [conda]
 symbol      = "conda"
-format      = "[$symbol:$environment ](fg:#00e010)"
+format      = "\n[│](fg:#ffffff)  [$symbol:$environment ](fg:#00e010)"
 ignore_base = true
 
 [rust]
 symbol = "Rs"
-format = "[$symbol:$version ](fg:#ff8c00)"
+format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#ff8c00)"
 
 [golang]
 symbol = "Go"
-format = "[$symbol:$version ](fg:#00eaff)"
+format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#00eaff)"
 
 [java]
 symbol = "Java"
-format = "[$symbol:$version ](fg:#ff2c84)"
+format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#ff2c84)"
 
 [kotlin]
 disabled = false
 symbol   = "Kt"
-format   = "[$symbol:$version ](fg:#b040ff)"
+format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#b040ff)"
 
 [lua]
 disabled = false
 symbol   = "Lua"
-format   = "[$symbol:$version ](fg:#4d9fff)"
+format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#4d9fff)"
 
 [ruby]
 disabled = false
 symbol   = "Rb"
-format   = "[$symbol:$version ](fg:#ff3b25)"
+format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#ff3b25)"
 
 [php]
 disabled = false
 symbol   = "PHP"
-format   = "[$symbol:$version ](fg:#b040ff)"
+format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#b040ff)"
 
 [docker_context]
 symbol          = "Docker"
-format          = "[$symbol:$context ](fg:#3a8fff)"
+format          = "\n[│](fg:#ffffff)  [$symbol:$context ](fg:#3a8fff)"
 only_with_files = false
 
 [terraform]
 disabled = false
 symbol   = "TF"
-format   = "[$symbol:$workspace ](fg:#b040ff)"
+format   = "\n[│](fg:#ffffff)  [$symbol:$workspace ](fg:#b040ff)"
 
 [helm]
 disabled = false
 symbol   = "Helm"
-format   = "[$symbol:$version ](fg:#4d9fff)"
+format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#4d9fff)"
 
 [kubernetes]
 disabled = false
 style    = "fg:#4d9fff bold"
-format   = "[$symbol$context(::$namespace) ]($style)"
+format   = "\n[│](fg:#ffffff)  [$symbol$context(::$namespace) ]($style)"
 symbol   = "K8s:"
 
+# ============================================================
+#   Row 6 — Shell info (Took duration, background jobs)
+# ============================================================
+
+[cmd_duration]
+min_time          = 500
+style             = "fg:#c084fc bold"
+format            = "\n[│](fg:#ffffff)  [took $duration ]($style)"
+show_milliseconds = true
+min_time_to_notify = 10000
+
+[jobs]
+symbol    = "~"
+style     = "fg:#00eaff bold"
+format    = "\n[│](fg:#ffffff)  [$symbol$number jobs ]($style)"
+threshold = 1
+
+[shlvl]
+disabled  = false
+style     = "fg:#ff8c00 bold"
+format    = "\n[│](fg:#ffffff)  [SHLVL:$shlvl ]($style)"
+threshold = 2
+repeat    = false
 
 # ============================================================
-#  Prompt character
+#   Prompt character
 # ============================================================
 
 [character]

@@ -55,7 +55,7 @@
       set -g default-terminal "tmux-256color"
       set -ag terminal-overrides ",xterm-256color:RGB"
 
-      # Fallback warm theme (overridden by matugen below if the file exists)
+      # Fallback warm theme (overridden by matugen/wallcolors on each wallpaper change)
       set -g status-style 'bg=default fg=#e6d6cb'
       set -g status-left '#[fg=#1c120c,bg=#e0563b,bold] #S #[bg=default,fg=#e0563b] '
       set -g status-left-length 20
@@ -69,26 +69,10 @@
       set -g pane-active-border-style 'fg=#e0563b'
       set -g message-style 'bg=#2e231b,fg=#e6d6cb'
 
-      # Source matugen/ricelin generated colors — overrides the fallback above
-      # whenever the wallpaper picker updates them.
+      # Source wallcolors-generated colors — overrides fallback above automatically
+      # whenever the wallpaper changes (wallcolors.py calls tmux source-file live).
       if-shell "test -f $HOME/.cache/ricelin/tmux-colors.conf" \
         "source-file $HOME/.cache/ricelin/tmux-colors.conf"
-
-      # Ctrl+Tab → next window  |  Ctrl+Shift+Tab → previous window
-      bind -n C-Tab   next-window
-      bind -n C-S-Tab previous-window
-
-      # Fast pane switching (Alt-Arrow)
-      bind -n M-Left  select-pane -L
-      bind -n M-Right select-pane -R
-      bind -n M-Up    select-pane -U
-      bind -n M-Down  select-pane -D
-
-      # Split keys
-      bind | split-window -h -c "#{pane_current_path}"
-      bind - split-window -v -c "#{pane_current_path}"
-      unbind '"'
-      unbind %
     '';
   };
 

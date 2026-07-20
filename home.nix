@@ -62,10 +62,10 @@ in
     touch "$HOME/.cache/ricelin/colors.json"
     touch "$HOME/.cache/ricelin/ghostty-colors"
     touch "$HOME/.cache/ricelin/hypr-colors.lua"
-    touch "$HOME/.cache/ricelin/tmux-colors.conf"
   '';
 
   home.pointerCursor = {
+    enable = true;
     gtk.enable = true;
     x11.enable = true;
     package = pkgs.bibata-cursors;

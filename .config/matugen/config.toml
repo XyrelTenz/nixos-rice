@@ -11,7 +11,3 @@ output_path = "/home/xyreltenz/.cache/matugen/hypr-colors.lua"
 [templates.fastfetch]
 input_path = "/home/xyreltenz/.config/matugen/templates/fastfetch.jsonc.tmpl"
 output_path = "/home/xyreltenz/.config/fastfetch/config.jsonc"
-
-[templates.tmux]
-input_path = "/home/xyreltenz/.config/matugen/templates/tmux-colors.conf.tmpl"
-output_path = "/home/xyreltenz/.cache/ricelin/tmux-colors.conf"

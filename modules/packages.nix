@@ -21,6 +21,7 @@ in {
     discord
     starship
     ripgrep
+    fzf
     wf-recorder
     scrcpy
 
@@ -48,8 +49,6 @@ in {
     flutter
     gradle
     docker-compose
-    prisma-engines
-    prisma
     openssl
 
 

@@ -121,7 +121,6 @@ vim.lsp.enable({
 	"vue_ls",
 	"rust_analyzer",
 	"clangd",
-	"prismals",
 	"kotlin_lsp",
 })
 

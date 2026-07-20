@@ -1,6 +1,6 @@
 local mod = "SUPER"
 
-hl.bind(mod .. " + Q", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/close-window.sh"))
+hl.bind(mod .. "+ Q", hl.dsp.window.close())
 hl.bind(mod .. "+ SHIFT + Q", hl.dsp.window.kill())
 hl.bind(mod .. " + T", hl.dsp.exec_cmd("ghostty"))
 hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen())

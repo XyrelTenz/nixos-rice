@@ -1,9 +1,13 @@
 # font-family = IBM Plex Mono
 # font-family = "Victor Mono"
-font-family = "JetBrainsMono Nerd Font"
+# font-family = "JetBrainsMono Nerd Font"
 # font-family = "Lilex"
-font-size = 14
-adjust-cell-height = 0%
+font-family = "Comic Mono"
+font-size = 10
+adjust-cell-height = 50%
+
+config-file = ?~/.cache/ricelin/ghostty-colors
+
 
 window-padding-x = 14
 window-padding-y = 12
@@ -44,5 +48,3 @@ palette = 12=#8fa9bb
 palette = 13=#d08a96
 palette = 14=#9fc3b4
 palette = 15=#fff6f0
-
-config-file = ?/home/xyreltenz/.cache/ricelin/ghostty-colors

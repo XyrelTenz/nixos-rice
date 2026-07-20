@@ -10,7 +10,6 @@ local options = {
 		rust = { "rustfmt" },
 		toml = { "tombi" },
 		cpp = { "clang-format" },
-		prisma = { "prisma-fmt" },
 		kotlin = { "ktfmt" },
 	},
 

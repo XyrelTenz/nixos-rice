@@ -1,249 +1,190 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
 format = """
-[╭─────⭕ ](fg:#ffffff)\
+[](surface0)\
+$os\
 $username\
-[    📁 ](fg:#ffffff)\
+[](bg:peach fg:surface0)\
 $directory\
-${git_branch}${git_status}${git_commit}${git_state}${git_metrics}\
-${env_var}${package}${c}${cmake}\
-${nodejs}${python}${conda}${rust}${golang}${java}${kotlin}${lua}${ruby}${php}${docker_context}${terraform}${helm}${kubernetes}\
-${cmd_duration}${jobs}${shlvl}${shell}\
-[\n╰─](fg:#ffffff)\
-$character\
-"""
+[](fg:peach bg:green)\
+$git_branch\
+$git_status\
+[](fg:green bg:teal)\
+$c\
+$rust\
+$golang\
+$nodejs\
+$php\
+$java\
+$kotlin\
+$haskell\
+$python\
+[](fg:teal bg:blue)\
+$docker_context\
+[](fg:blue bg:purple)\
+$time\
+[ ](fg:purple)\
+$line_break$character"""
 
-right_format = ""
-palette      = 'cyberdream'
+palette = 'catppuccin_mocha'
 
-[palettes.cyberdream]
-text         = '#ff9318'
-overlay1     = '#2a3555'
-color_blue   = '#4d9fff'
-color_aqua   = '#00eaff'
-color_green  = '#00ff15'
-color_orange = '#ff8c00'
-color_red    = '#ff3b25'
-color_yellow = '#eaff00'
-color_pink   = '#ff2c84'
-color_purple = '#b040ff'
-color_violet = '#a78bfa'
-red          = '#ff3b25'
+[palettes.gruvbox_dark]
+color_fg0 = '#fbf1c7'
+color_bg1 = '#3c3836'
+color_bg3 = '#665c54'
+color_blue = '#458588'
+color_aqua = '#689d6a'
+color_green = '#98971a'
+color_orange = '#d65d0e'
+color_purple = '#b16286'
+color_red = '#cc241d'
+color_yellow = '#d79921'
 
-# ============================================================
-#   Row 1 — Identity
-# ============================================================
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+orange = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"
+
+[os]
+disabled = false
+style = "bg:surface0 fg:text"
+
+[os.symbols]
+Windows = "󰍲"
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = ""
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+Arch = "󰣇"
+Artix = "󰣇"
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
 
 [username]
 show_always = true
-style_user  = "fg:#ff9318 bold underline"
-style_root  = "fg:#ff3b25 bold underline"
-format      = "[$user]($style)"
+style_user = "bg:surface0 fg:text"
+style_root = "bg:surface0 fg:text"
+format = '[ $user ]($style)'
 
 [directory]
-style               = "fg:#ffffff bold"
-format              = "[$path ]($style)"
-truncation_length   = 100
-truncation_symbol   = ""
-use_os_path_sep     = false
-truncate_to_repo    = false
-use_logical_path    = true
+style = "fg:mantle bg:peach"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
 
 [directory.substitutions]
-"Documents" = "Docs"
-"Downloads" = "DL"
-"Desktop"   = "Desk"
-"Projects"  = "Proj"
-
-# ============================================================
-#   Row 2 — Git full details (Dynamic Newline)
-# ============================================================
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"Developer" = "󰲋 "
 
 [git_branch]
-symbol   = "⎇"
-style    = "fg:#eaff00 bold"
-format   = "\n[│](fg:#ffffff)  [$symbol $branch(:$remote_branch) ]($style)"
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol $branch ](fg:base bg:green)]($style)'
 
 [git_status]
-style      = "fg:#ff8c00"
-format     = "[$all_status$ahead_behind ]($style)"
-ahead      = "^$count"
-behind     = "v$count"
-diverged   = "^${ahead_count}v${behind_count}"
-untracked  = "?$count"
-stashed    = "S$count"
-modified   = "!$count"
-staged     = "+$count"
-deleted    = "x$count"
-conflicted = "=$count"
-renamed    = "r$count"
-
-[git_commit]
-only_detached      = false
-format             = "[@$hash$tag ](fg:#ff2c84)"
-commit_hash_length = 6
-tag_symbol         = " #"
-tag_disabled       = false
-
-[git_state]
-style           = "fg:#ff3b25 bold"
-format          = "[$state($progress_current/$progress_total) ]($style)"
-rebase          = "REBASE "
-merge           = "MERGE "
-revert          = "REVERT "
-cherry_pick     = "CHERRY "
-bisect          = "BISECT "
-am              = "AM "
-am_or_rebase    = "AM/REBASE "
-
-[git_metrics]
-disabled              = false
-added_style           = "fg:#00ff15 bold"
-deleted_style         = "fg:#ff3b25 bold"
-format                = "[+$added ]($added_style)[-$deleted ]($deleted_style)"
-only_nonzero_diffs    = true
-
-# ============================================================
-#   Row 3 — System Stats (Completely Disabled)
-# ============================================================
-
-[memory_usage]
-disabled  = true
-
-[battery]
-disabled = true
-
-[time]
-disabled = true
-
-# ============================================================
-#   Row 4 — Env vars + package + build tools (Dynamic Newline)
-# ============================================================
-
-[env_var.VIRTUAL_ENV]
-variable = "VIRTUAL_ENV"
-style    = "fg:#ff2c84"
-format   = "\n[│](fg:#ffffff)  [$env_value ]($style)"
-default  = ""
-
-[package]
-disabled      = false
-style         = "fg:#ff8c00 bold"
-format        = "\n[│](fg:#ffffff)  [$symbol$version ]($style)"
-symbol        = "pkg:"
-version_format = "v${raw}"
-
-[c]
-disabled = false
-style    = "fg:#4d9fff bold"
-format   = "\n[│](fg:#ffffff)  [$symbol$version ]($style)"
-symbol   = "C:"
-
-[cmake]
-disabled = false
-style    = "fg:#4d9fff"
-format   = "\n[│](fg:#ffffff)  [$symbol$version ]($style)"
-symbol   = "cmake:"
-
-# ============================================================
-#   Row 5 — Toolchain (Dynamic Newline on the first active tool)
-# ============================================================
+style = "bg:teal"
+format = '[[($all_status$ahead_behind )](fg:base bg:green)]($style)'
 
 [nodejs]
-symbol = "Node"
-format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#00ff15)"
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 
-[python]
-symbol        = "Py"
-format        = "\n[│](fg:#ffffff)  [$symbol:$version( ($virtualenv)) ](fg:#eaff00)"
-python_binary = ["python3", "python"]
-
-[conda]
-symbol      = "conda"
-format      = "\n[│](fg:#ffffff)  [$symbol:$environment ](fg:#00e010)"
-ignore_base = true
+[c]
+symbol = " "
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 
 [rust]
-symbol = "Rs"
-format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#ff8c00)"
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 
 [golang]
-symbol = "Go"
-format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#00eaff)"
-
-[java]
-symbol = "Java"
-format = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#ff2c84)"
-
-[kotlin]
-disabled = false
-symbol   = "Kt"
-format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#b040ff)"
-
-[lua]
-disabled = false
-symbol   = "Lua"
-format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#4d9fff)"
-
-[ruby]
-disabled = false
-symbol   = "Rb"
-format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#ff3b25)"
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 
 [php]
-disabled = false
-symbol   = "PHP"
-format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#b040ff)"
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
+
+[java]
+symbol = " "
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
+
+[kotlin]
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
+
+[haskell]
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
+
+[python]
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 
 [docker_context]
-symbol          = "Docker"
-format          = "\n[│](fg:#ffffff)  [$symbol:$context ](fg:#3a8fff)"
-only_with_files = false
+symbol = ""
+style = "bg:mantle"
+format = '[[ $symbol( $context) ](fg:#83a598 bg:color_bg3)]($style)'
 
-[terraform]
+[time]
 disabled = false
-symbol   = "TF"
-format   = "\n[│](fg:#ffffff)  [$symbol:$workspace ](fg:#b040ff)"
+time_format = "%R"
+style = "bg:peach"
+format = '[[  $time ](fg:mantle bg:purple)]($style)'
 
-[helm]
+[line_break]
 disabled = false
-symbol   = "Helm"
-format   = "\n[│](fg:#ffffff)  [$symbol:$version ](fg:#4d9fff)"
-
-[kubernetes]
-disabled = false
-style    = "fg:#4d9fff bold"
-format   = "\n[│](fg:#ffffff)  [$symbol$context(::$namespace) ]($style)"
-symbol   = "K8s:"
-
-# ============================================================
-#   Row 6 — Shell info (Took duration, background jobs)
-# ============================================================
-
-[cmd_duration]
-min_time          = 500
-style             = "fg:#c084fc bold"
-format            = "\n[│](fg:#ffffff)  [took $duration ]($style)"
-show_milliseconds = true
-min_time_to_notify = 10000
-
-[jobs]
-symbol    = "~"
-style     = "fg:#00eaff bold"
-format    = "\n[│](fg:#ffffff)  [$symbol$number jobs ]($style)"
-threshold = 1
-
-[shlvl]
-disabled  = false
-style     = "fg:#ff8c00 bold"
-format    = "\n[│](fg:#ffffff)  [SHLVL:$shlvl ]($style)"
-threshold = 2
-repeat    = false
-
-# ============================================================
-#   Prompt character
-# ============================================================
 
 [character]
-format         = "$symbol "
-success_symbol = "[➤ ](bold fg:#ffffff)"
-error_symbol   = "[➤ ](bold fg:#ff3b25)"
-vimcmd_symbol  = "[N ](bold fg:#00ff15)"
+disabled = false
+success_symbol = '[](bold fg:green)'
+error_symbol = '[](bold fg:red)'
+vimcmd_symbol = '[](bold fg:creen)'
+vimcmd_replace_one_symbol = '[](bold fg:purple)'
+vimcmd_replace_symbol = '[](bold fg:purple)'
+vimcmd_visual_symbol = '[](bold fg:lavender)'

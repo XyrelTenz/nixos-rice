@@ -10,6 +10,7 @@
     lilex
     nerd-fonts.lilex
     victor-mono
+    comic-mono
   ];
 
   fonts.fontconfig = {

@@ -3,7 +3,7 @@
 # font-family = "JetBrainsMono Nerd Font"
 # font-family = "Lilex"
 font-family = "Comic Mono"
-font-size = 10
+font-size = 8
 adjust-cell-height = 50%
 
 config-file = ?~/.cache/ricelin/ghostty-colors

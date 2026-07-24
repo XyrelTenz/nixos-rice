@@ -14,15 +14,26 @@
     portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
   };
 
-  # Display manager (SilentSDDM)
-  programs.silentSDDM = {
+  # Enable SDDM with Wayland support
+  services.displayManager.sddm = {
     enable = true;
-    theme = "default";
+    wayland.enable = true;
+    extraPackages = with pkgs; [
+      gst_all_1.gst-plugins-base
+      gst_all_1.gst-plugins-good
+      gst_all_1.gst-plugins-bad
+      gst_all_1.gst-plugins-ugly
+      gst_all_1.gst-libav
+    ];
   };
 
-
-  # PAM service for Quickshell lockscreen
-  security.pam.services.quickshell = {};
+  # Qylock strictly for SDDM login screen
+  programs.qylock = {
+    enable = true;
+    theme = "pixel-hollowknight";
+    sddm.enable = true;
+    quickshell.enable = false;
+  };
 
   # Hardware
   hardware.graphics = {
@@ -55,5 +66,5 @@
   };
 
   # GameMode
-  programs.gamemode.enable = true;
+  programs.gamemode.enable = false;
 }

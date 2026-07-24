@@ -13,8 +13,8 @@
       url = "github:jacopone/antigravity-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    silentSDDM = {
-      url = "github:uiriansan/SilentSDDM";
+    qylock = {
+      url = "github:Darkkal44/qylock";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-cachyos-kernel = {
@@ -31,7 +31,7 @@
     hyprland,
     home-manager,
     antigravity-nix,
-    silentSDDM,
+    qylock,
     nix-cachyos-kernel,
     ...
   }: let
@@ -42,7 +42,7 @@
       system = "x86_64-linux";
       specialArgs = { inherit inputs username timezone; };
       modules = [
-        silentSDDM.nixosModules.default
+        qylock.nixosModules.default
 
         hyprland.nixosModules.default
         ./hardware-configuration.nix

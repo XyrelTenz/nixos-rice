@@ -30,7 +30,8 @@
   # Qylock strictly for SDDM login screen
   programs.qylock = {
     enable = true;
-    theme = "pixel-hollowknight";
+    # theme = "pixel-hollowknight";
+    theme = "enfield";
     sddm.enable = true;
     quickshell.enable = false;
   };

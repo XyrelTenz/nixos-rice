@@ -9,6 +9,7 @@
     ibm-plex
     lilex
     nerd-fonts.lilex
+    nerd-fonts.monofur
     victor-mono
     comic-mono
   ];

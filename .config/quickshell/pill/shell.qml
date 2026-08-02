@@ -260,11 +260,9 @@ ShellRoot {
             readonly property bool modal: pill.authPending ? false : (surfaceOpen || pill.held || pill.quickChoosing)
 
             /**
-             * True while this monitor's active workspace holds a real
-             * fullscreen window. The pill then retracts off the top edge and
-             * the whole layer becomes click-through so fullscreen content owns
-             * the screen. Maximize is suppressed globally, so only true
-             * fullscreen ever flips this.
+             * True while this monitor's active workspace reports a fullscreen
+             * client. The pill then retracts off the top edge and the whole
+             * layer becomes click-through so fullscreen content owns the screen.
              */
             readonly property bool monFullscreen: {
                 var mons = Hyprland.monitors.values;

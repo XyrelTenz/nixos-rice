@@ -857,7 +857,7 @@ SettingsSurface {
             FieldRow {
                 id: pillGapRow
                 label: "Pill gap"
-                caption: "Distance from the screen top. Lower squeezes the pill up and pulls windows with it."
+                caption: "Space above the pill. Lower pulls windows up with it."
                 ScrubValue {
                     id: pillGapScrub
                     s: root.s
@@ -871,7 +871,7 @@ SettingsSurface {
             FieldRow {
                 id: appGapRow
                 label: "App gap"
-                caption: "Distance between the pill and the windows below it. Lower pulls them up under the pill."
+                caption: "Space under the pill. Lower pulls windows up."
                 ScrubValue {
                     id: appGapScrub
                     s: root.s
@@ -899,7 +899,7 @@ SettingsSurface {
             FieldRow {
                 id: pillBlurRow
                 label: "Pill blur"
-                caption: "Frosts what is behind the pill. Needs opacity below 100%."
+                caption: "Frosts behind the pill. Needs opacity under 100%."
                 LinkToggle {
                     s: root.s
                     on: Flags.pillBlur

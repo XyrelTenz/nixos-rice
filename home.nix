@@ -1,7 +1,7 @@
 { config, pkgs, lib, username, ... }:
 
 let
-  repoPath = "/home/${username}/nixos-config/.config";
+  repoPath = "/home/${username}/nixos-config/configs";
 in
 {
   home.username = username;

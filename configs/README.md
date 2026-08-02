@@ -1,11 +1,11 @@
-# .config / Dotfiles
+# configs / Dotfiles
 
 User dotfiles managed via **Home Manager** alongside the NixOS configuration.
 
 ## Structure
 
 ```
-.config/
+configs/
 ├── hypr/           → ~/.config/hypr/         (Hyprland window manager)
 ├── ghostty/        → ~/.config/ghostty/      (Ghostty terminal emulator)
 ├── cava/           → ~/.config/cava/         (Cava audio visualizer)
@@ -26,7 +26,7 @@ They point **directly** to this directory (not through the Nix store), so any ed
 
 ### 1. Neovim Setup
 - **Background Transparency:** Configured NvChad with a default transparent background. Added hotkey `<leader>tt` to toggle transparency.
-- **Telescope Search:** Configured to include hidden folders (like `.config/`) when searching for files.
+- **Telescope Search:** Configured to include hidden folders (like `configs/`) when searching for files.
 - **Auto-Tags:** Added automatic tag closing and renaming support for TypeScript, TSX, React, and other frameworks via `nvim-ts-autotag`.
 
 ### 2. Gaming Setup
@@ -54,4 +54,5 @@ sudo nixos-rebuild switch --flake .#XyrelTenz
 
 Home Manager will create the symlinks automatically as part of the switch.
 
-> **Tip:** After setup, edit any config directly in `~/nixos-config/.config/` — changes take effect immediately without rebuilding!
+> **Tip:** After setup, edit any config directly in `~/nixos-config/configs/` — changes take effect immediately without rebuilding!
+

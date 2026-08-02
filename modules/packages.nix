@@ -22,6 +22,10 @@ in {
     starship
     ripgrep
     fzf
+    zoxide
+    fd
+    bat
+    eza
     wf-recorder
     scrcpy
 

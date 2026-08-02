@@ -41,8 +41,8 @@ nixos-config/
 │   ├── desktop.nix            → Hyprland, SilentSDDM, Flatpak, & graphics drivers
 │   ├── environment.nix        → Timezone, session variables, shell registration
 │   └── packages.nix           → System packages & dev tools (Android Studio, Neovim)
-└── .config/                   → User configuration files (symlinked directly to ~/.config)
-    └── (See .config/README.md for details)
+└── configs/                   → User configuration files (symlinked directly to ~/.config)
+    └── (See configs/README.md for details)
 ```
 
 ---

@@ -23,6 +23,7 @@ if status is-interactive
         zoxide init fish --cmd cd | source
     end
     if command -v fzf >/dev/null 2>&1
+        set -e FZF_DEFAULT_OPTS
         fzf --fish | source
     end
     if command -v starship >/dev/null 2>&1
@@ -33,7 +34,7 @@ if status is-interactive
     set -gx FZF_DEFAULT_OPTS " \
       --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
       --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
-      --color=marker:#b4befe,prompt:#cba6f7,gq:#f38ba8 \
+      --color=marker:#b4befe,prompt:#cba6f7,query:#f38ba8 \
       --height 40% --layout=reverse --border=rounded --inline-info --prompt='❯ ' --pointer='▶' --marker='✓'"
 
     if command -v fd >/dev/null 2>&1

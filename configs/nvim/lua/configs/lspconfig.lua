@@ -21,6 +21,11 @@ vim.lsp.config("ts_ls", {
 	},
 })
 
+vim.lsp.config("oxlint", {
+	cmd = { "oxlint", "--lsp" },
+	filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact", "vue" },
+})
+
 vim.lsp.config("vue_ls", {
 	cmd = { "/usr/bin/vue-language-server", "--stdio" },
 	on_attach = function(client, bufnr)
@@ -114,6 +119,7 @@ vim.lsp.enable({
 	"html",
 	"cssls",
 	"ts_ls",
+	"oxlint",
 	"tailwindcss",
 	"luals",
 	"gopls",

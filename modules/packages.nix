@@ -78,7 +78,8 @@ in {
     nixd
     alejandra
     kdePackages.qtdeclarative
-    prettier
+    oxfmt
+    oxlint
     ktfmt
     google-java-format
     rustfmt

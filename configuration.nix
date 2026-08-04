@@ -5,6 +5,9 @@
   inputs,
   ...
 }: {
+  hardware.system76.enableAll = true;
+  services.power-profiles-daemon.enable = false;
+
   # Make the flake's nixpkgs input available to nixd through <nixpkgs>.
   nix.nixPath = [ "nixpkgs=${inputs.nixpkgs}" ];
 

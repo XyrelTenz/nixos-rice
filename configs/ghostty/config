@@ -1,8 +1,9 @@
 # font-family = IBM Plex Mono
 # font-family = "Victor Mono"
-font-family = "JetBrainsMono Nerd Font"
+# font-family = "JetBrainsMono Nerd Font"
 # font-family = "Lilex"
 # font-family = "Comic Mono"
+font-family = "SpaceMono Nerd Font"
 font-size = 8
 adjust-cell-height = 50%
 custom-shader = ~/.config/ghostty/shaders/cursor_warp.glsl

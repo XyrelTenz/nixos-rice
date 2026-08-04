@@ -36,7 +36,18 @@ in
       ln -sfn "$src" "$dst"
     }
 
-    _linkConfig "hypr"                "hypr"
+    _copyConfig() {
+      local src="${repoPath}/$1"
+      local dst="$HOME/.config/$2"
+      mkdir -p "$(dirname "$dst")"
+      rm -rf "$dst"
+      mkdir -p "$dst"
+      cp -a "$src"/. "$dst"/
+    }
+
+    # Hyprland currently expects its config home to be a real directory;
+    # deploying it as a symlink makes it fail during startup.
+    _copyConfig "hypr"                "hypr"
     _linkConfig "ghostty"             "ghostty"
     _linkConfig "cava"                "cava"
     _linkConfig "nvim"                "nvim"

@@ -36,7 +36,8 @@ in {
     protonup-qt
     jetbrains-toolbox
     appimage-run
-    devin-desktop
+    codex
+    opencode
 
     inputs.nixpkgs-neovim.legacyPackages.${pkgs.stdenv.hostPlatform.system}.neovim
     android-tools

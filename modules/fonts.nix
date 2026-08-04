@@ -12,6 +12,7 @@
     nerd-fonts.monofur
     victor-mono
     comic-mono
+    nerd-fonts.space-mono
   ];
 
   fonts.fontconfig = {

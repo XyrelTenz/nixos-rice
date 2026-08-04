@@ -15,4 +15,19 @@
       }
     ];
   };
+
+  # Keep normal workloads responsive without leaving the fans at an
+  # unnecessarily aggressive profile. Use `system76-power profile performance`
+  # temporarily for heavy builds or games.
+  systemd.services.system76-power-balanced = {
+    description = "Select the System76 balanced power profile";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "com.system76.PowerDaemon.service" ];
+    wants = [ "com.system76.PowerDaemon.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.system76-power}/bin/system76-power profile balanced";
+      RemainAfterExit = true;
+    };
+  };
 }

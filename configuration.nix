@@ -5,6 +5,9 @@
   inputs,
   ...
 }: {
+  # Make the flake's nixpkgs input available to nixd through <nixpkgs>.
+  nix.nixPath = [ "nixpkgs=${inputs.nixpkgs}" ];
+
   imports = [
     ./hardware-configuration.nix
     ./modules/boot.nix

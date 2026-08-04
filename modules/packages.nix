@@ -80,7 +80,6 @@ in {
     kdePackages.qtdeclarative
     oxfmt
     oxlint
-    ktfmt
     google-java-format
     rustfmt
 

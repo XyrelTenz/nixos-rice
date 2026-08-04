@@ -16,7 +16,6 @@ $golang\
 $nodejs\
 $php\
 $java\
-$kotlin\
 $haskell\
 $python\
 [](fg:teal bg:blue)\
@@ -148,11 +147,6 @@ format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 
 [java]
 symbol = " "
-style = "bg:teal"
-format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
-
-[kotlin]
-symbol = ""
 style = "bg:teal"
 format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 

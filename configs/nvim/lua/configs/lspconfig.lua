@@ -1,5 +1,4 @@
 local nvlsp = require("nvchad.configs.lspconfig")
-local lspconfig = require("lspconfig")
 vim.lsp.config("*", {
 	on_init = nvlsp.on_init,
 	on_attach = nvlsp.on_attach,
@@ -7,6 +6,30 @@ vim.lsp.config("*", {
 })
 
 local vue_plugin_path = "/usr/lib/node_modules/@vue/typescript-plugin"
+
+vim.lsp.config("nixd", {
+	cmd = { "nixd" },
+	filetypes = { "nix" },
+	root_markers = { "flake.nix", "default.nix", ".git" },
+	settings = {
+		nixd = {
+			nixpkgs = {
+				expr = "import <nixpkgs> { }",
+			},
+			formatting = {
+				command = { "alejandra" },
+			},
+			options = {
+				nixos = {
+					expr = "(builtins.getFlake (builtins.toString ./.)).nixosConfigurations.XyrelTenz.options",
+				},
+				["home-manager"] = {
+					expr = "(builtins.getFlake (builtins.toString ./.)).nixosConfigurations.XyrelTenz.options.home-manager.users.type.getSubOptions []",
+				},
+			},
+		},
+	},
+})
 
 vim.lsp.config("ts_ls", {
 	filetypes = { "typescript", "javascript", "javascriptreact", "typescriptreact", "vue" },
@@ -83,41 +106,10 @@ vim.lsp.config("rust_analyzer", {
 	},
 })
 
--- Resolve the real JDK home at startup (follows NixOS symlinks to the actual store path).
--- /run/current-system/sw is NOT a valid JAVA_HOME — it's a merged profile without JDK internals.
-local java_bin = vim.fn.system("readlink -f $(which java) 2>/dev/null"):gsub("\n", "")
-local java_home = java_bin ~= "" and vim.fn.fnamemodify(java_bin, ":h:h") or ""
-
-vim.lsp.config("kotlin_lsp", {
-	cmd = java_home ~= ""
-			and { "env", "JAVA_HOME=" .. java_home, "kotlin-lsp", "--stdio" }
-		or { "kotlin-lsp", "--stdio" },
-	filetypes = { "kotlin", "java" },
-	root_dir = function(bufnr, on_dir)
-		local root = vim.fs.root(bufnr, {
-			"settings.gradle",
-			"settings.gradle.kts",
-			"build.gradle",
-			"build.gradle.kts",
-			"pom.xml",
-			".git",
-		})
-		if root then
-			on_dir(root)
-		end
-	end,
-	settings = {
-		intellij = {
-			buildTool = "gradle",
-			-- Pass the resolved JDK path so kotlin-lsp can find it for Gradle execution
-			jdk = java_home,
-		},
-	},
-})
-
 vim.lsp.enable({
 	"html",
 	"cssls",
+	"nixd",
 	"ts_ls",
 	"oxlint",
 	"tailwindcss",
@@ -127,7 +119,6 @@ vim.lsp.enable({
 	"vue_ls",
 	"rust_analyzer",
 	"clangd",
-	"kotlin_lsp",
 })
 
 require("telescope").load_extension("projects")

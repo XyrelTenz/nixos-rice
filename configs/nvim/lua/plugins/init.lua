@@ -122,7 +122,6 @@ return {
 				"svelte",
 				"vue",
 				"qml",
-				"kotlin",
 			},
 		},
 	},

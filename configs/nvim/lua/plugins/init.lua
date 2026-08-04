@@ -55,7 +55,11 @@ return {
 			"nvim-treesitter/nvim-treesitter",
 		},
 		config = function()
-			require("go").setup()
+			-- go.nvim's codelens.enable() API is not available in Neovim 0.11.1.
+			-- codelens is optional; keep gopls and formatting enabled without it.
+			require("go").setup({
+				lsp_codelens = false,
+			})
 		end,
 		event = { "CmdlineEnter" },
 		ft = { "go", "gomod" },

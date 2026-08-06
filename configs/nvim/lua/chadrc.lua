@@ -40,4 +40,3 @@ M.ui = {
 }
 
 return M
-

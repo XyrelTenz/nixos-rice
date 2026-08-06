@@ -69,6 +69,7 @@ return {
 	priority = 1000,
 	lazy = false,
 	opts = {
+		image = { enabled = true },
 		dashboard = {
 			width = 75,
 			pane_gap = 10,

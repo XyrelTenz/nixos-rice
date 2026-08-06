@@ -74,6 +74,9 @@ return {
 		opts = {
 			sources = {
 				default = { "lsp", "path", "snippets", "buffer" },
+				transform_items = function(...)
+					return require("flutter-icons").transform_items(...)
+				end,
 			},
 		},
 	},
@@ -138,6 +141,22 @@ return {
 				},
 			},
 		},
+	},
+
+	{
+		"sidlatau/flutter-icons.nvim",
+		lazy = false,
+		dependencies = {
+			"folke/snacks.nvim",
+			"saghen/blink.cmp",
+		},
+		opts = {
+			builtin_icons = true,
+			virtual_text = true,
+		},
+		config = function(_, opts)
+			require("flutter-icons").setup(opts)
+		end,
 	},
 	{
 		"windwp/nvim-ts-autotag",

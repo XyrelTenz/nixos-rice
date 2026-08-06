@@ -1,6 +1,9 @@
-{ config, lib, pkgs, ... }:
-
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   fonts.packages = with pkgs; [
     material-symbols
     rubik
@@ -13,13 +16,14 @@
     victor-mono
     comic-mono
     nerd-fonts.space-mono
+    nerd-fonts.inconsolata-go
   ];
 
   fonts.fontconfig = {
     enable = true;
     defaultFonts = {
-      monospace = [ "Lilex Nerd Font" "Lilex" "IBM Plex Mono" ];
-      sansSerif = [ "IBM Plex Sans" ];
+      monospace = ["Lilex Nerd Font" "Lilex" "IBM Plex Mono"];
+      sansSerif = ["IBM Plex Sans"];
     };
   };
 }

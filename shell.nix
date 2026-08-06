@@ -25,6 +25,8 @@ localPkgs.mkShell {
   buildInputs = [
     localPkgs.flutter
     localPkgs.dart
+    localPkgs.imagemagick
+    localPkgs.librsvg
     localPkgs.openssl
 
     androidComposition.androidsdk

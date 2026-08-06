@@ -1,6 +1,9 @@
-{ config, lib, pkgs, ... }:
-
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   boot.loader.systemd-boot.enable = false;
   boot.loader.efi.canTouchEfiVariables = true;
 
@@ -34,7 +37,7 @@
   boot.plymouth = {
     enable = true;
     theme = "dragon";
-    logo = pkgs.runCommand "transparent-logo.png" { buildInputs = [ pkgs.imagemagick ]; } ''
+    logo = pkgs.runCommand "transparent-logo.png" {buildInputs = [pkgs.imagemagick];} ''
       convert -size 1x1 xc:transparent $out
     '';
     extraConfig = ''
@@ -47,7 +50,7 @@
         pname = "plymouth-theme-dragon";
         version = "1.0";
         src = ../themes/plymouth-dragon;
-        buildInputs = [ pkgs.plymouth ];
+        buildInputs = [pkgs.plymouth];
         installPhase = ''
           dir=$out/share/plymouth/themes/dragon
           mkdir -p $dir
@@ -62,8 +65,8 @@
   boot.consoleLogLevel = 0;
   boot.initrd.verbose = false;
   boot.initrd.systemd.enable = true;
-  boot.initrd.availableKernelModules = [ "amdgpu" ];
-  boot.initrd.kernelModules = [ "amdgpu" ];
+  boot.initrd.availableKernelModules = ["amdgpu"];
+  boot.initrd.kernelModules = ["amdgpu"];
 
   boot.kernelParams = [
     "amdgpu.sg_display=0"
@@ -81,7 +84,7 @@
     "vt.global_cursor_default=0"
     "video=efifb:off"
   ];
-  boot.kernelModules = [ "kvm-amd" ];
+  boot.kernelModules = ["kvm-amd"];
 
   boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
 }

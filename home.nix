@@ -1,9 +1,12 @@
-{ config, pkgs, lib, username, ... }:
-
-let
-  repoPath = "/home/${username}/nixos-config/configs";
-in
 {
+  config,
+  pkgs,
+  lib,
+  username,
+  ...
+}: let
+  repoPath = "/home/${username}/nixos-config/configs";
+in {
   home.username = username;
   home.homeDirectory = "/home/${username}";
   home.stateVersion = "26.05";
@@ -27,7 +30,7 @@ in
     "$HOME/Android/Sdk/platform-tools"
   ];
 
-  home.activation.linkDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.linkDotfiles = lib.hm.dag.entryAfter ["writeBoundary"] ''
     _linkConfig() {
       local src="${repoPath}/$1"
       local dst="$HOME/.config/$2"
@@ -87,15 +90,15 @@ in
   systemd.user.services.hypridle = {
     Unit = {
       Description = "Hyprland idle daemon";
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
+      After = ["graphical-session.target"];
+      PartOf = ["graphical-session.target"];
     };
     Service = {
       ExecStart = "${pkgs.hypridle}/bin/hypridle";
       Restart = "on-failure";
     };
     Install = {
-      WantedBy = [ "graphical-session.target" ];
+      WantedBy = ["graphical-session.target"];
     };
   };
 }

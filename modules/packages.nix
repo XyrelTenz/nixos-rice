@@ -97,6 +97,7 @@ in {
     brightnessctl
     cliphist
     imagemagick
+    librsvg
     jq
     desktop-file-utils
     vlc
